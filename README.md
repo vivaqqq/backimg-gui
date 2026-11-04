@@ -5,6 +5,8 @@
 ![backimg 图形板主界面](docs/screenshot.png)
 
 > **📌 诚实声明**：这个仓库、所有源代码的修复与增强、以及把它开源上架的整个过程，**全部由 AI 完成**——主力是 WorkBuddy（GLM 大模型），修复与审计环节还用了千问、Kimi、DeepSeek、混元、豆包做多轮交叉审计。仓库主人**完全不懂代码**，是零代码用户，全程只负责提需求、验收和按下"发布"。源代码和程序都放在这里，MIT 协议随便用——**觉得不满意？欢迎自己拿回家改**，这正是开源的意义。
+>
+> **📌 Honest Disclosure**: This repository — every fix, every feature, and the entire process of open-sourcing it — was **built entirely with AI**. The main workhorse was WorkBuddy (the GLM large language model), with fixes and audits cross-checked over multiple rounds by Qwen, Kimi, DeepSeek, Hunyuan, and Doubao. The repo owner **cannot write code at all** — a zero-code user who only provided requirements, reviewed the results, and pressed "publish". Both the source code and the program are right here under the MIT license — **not satisfied? Feel free to take it home and modify it yourself**. That is exactly what open source is for.
 
 > 本项目基于 [Maplespe/explorerTool](https://github.com/Maplespe/explorerTool)（MIT License，Copyright © 2021 Maplespe）深度增强而来，原版 DLL 的全部能力保留，其上叠加了大量修复与功能扩展。原作介绍页：[winmoes.com](https://winmoes.com/tools/12556.html)。
 
