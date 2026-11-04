@@ -1,0 +1,21 @@
+# Build artifacts
+[Bb]uild/
+[Rr]elease/
+[Dd]ebug/
+x64/
+*.exe
+*.dll
+*.obj
+*.pdb
+*.lib
+*.res
+*.aps
+*.ipch
+*.tlog
+
+# Logs and runtime state
+*.log
+winsize.ini
+
+# Runtime config (template only: plugin/config.ini.example)
+config.ini
