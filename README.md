@@ -2,7 +2,20 @@
 
 给 Windows 文件资源管理器的文件夹窗口铺上自定义背景图——支持多图随机、秒/分钟级定时轮换、等比缩放实时跟随窗口、文件对话框铺图。
 
-![backimg 图形板主界面](docs/screenshot.png)
+| 中文界面（backimg 图形板） | English UI (backimg Panel) |
+|---|---|
+| ![backimg 图形板中文界面](docs/screenshot.png) | ![backimg Panel English UI](docs/screenshot-en.png) |
+
+## 下载（预编译包）
+
+到 [Releases · v1.3.28](https://github.com/vivaqqq/backimg-gui/releases/tag/v1.3.28) 下载，解压即用（含图形板 exe + DLL + 配置模板 + 说明）：
+
+| 包 | 界面语言 |
+|---|---|
+| `backimg-gui_v1.3.28.zip` | 中文 |
+| `backimg-gui_v1.3.28_english-ui.zip` | English |
+
+英文界面的源码在 [`english-ui`](https://github.com/vivaqqq/backimg-gui/tree/english-ui) 分支（`shell/` 目录）。
 
 > **📌 诚实声明**：这个仓库、所有源代码的修复与增强、以及把它开源上架的整个过程，**全部由 AI 完成**——主力是 WorkBuddy（GLM 大模型），修复与审计环节还用了千问、Kimi、DeepSeek、混元、豆包做多轮交叉审计。仓库主人**完全不懂代码**，是零代码用户，全程只负责提需求、验收和按下"发布"。源代码和程序都放在这里，MIT 协议随便用——**觉得不满意？欢迎自己拿回家改**，这正是开源的意义。
 >

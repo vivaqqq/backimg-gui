@@ -13,7 +13,7 @@
  *                可自由选到秒级；内部权威单位改为秒（randomVal），
  *                randomMin 仍兼容写入供旧版 DLL 使用
  *              - D2（用户实机 bug）：自定义图片目录指向程序目录之外
- *                （如 G://MyPics）时偶发不显示 —— DLL 侧加
+ *                （如 G:\手机备份\Image）时偶发不显示 —— DLL 侧加
  *                枚举瞬时失败重试 + 空列表定时自愈重载（详见 DLL 变更清单）
  *            配套 DLL 升级为 v1.3.25（rotateSec + 自愈重载）。
  *   v1.3.22：配套 DLL 升级为 v1.3.22 复审加固版（界面零改动）。本版外壳
@@ -2568,13 +2568,15 @@ static void build_basic_tab(HWND parent) {
     /* 摘要网格：宽度充足时前 6 项两两并排，否则全部单列
        UI-2：键名改自绘（超宽出省略号），键列 128；UI-8：值行比键行低 1px */
     const WCHAR *sum_keys[9] = {
-        L"folderExt · 文件对话框", L"noerror · 忽略错误", L"random · 随机显示",
-        L"custom · 自定义目录", L"posType · 显示位置", L"imgAlpha · 不透明度",
-        L"folder · 自定义路径", L"imgcount · 图片张数", L"dllstatus · DLL 状态"
+        L"文件对话框", L"忽略错误", L"随机显示",
+        L"自定义目录", L"显示位置", L"不透明度",
+        L"自定义路径", L"图片张数", L"DLL 状态"
     };
-    /* v1.3.3：键列 128→108（设计稿 .skey width 106px），省下的宽度给值列 */
+    /* v1.3.3：键列 128→108（设计稿 .skey width 106px）。
+     * 2026-11-04 增补（人类开发者提出）：键名去掉 ini 英文前缀改纯中文，
+     * 键列 108→80，宽度进一步让给值列——G:\手机备份 这类长路径能多显示一截 */
     int colw = (cardw - S(24) - S(16)) / 2;
-    int keyw2 = S(108);
+    int keyw2 = S(80);
     if (colw >= S(200)) {
         /* 设计稿：9 项两列网格；最后一项 dllstatus 值长，独占整行 */
         for (int i = 0; i < 9; i++) {
@@ -3561,6 +3563,26 @@ static void refresh_image_list(void) {
         ListView_SetItemText(g_app.hwndImgList, pos, 1, szbuf);
     }
     free(imgs);
+    /* 智能列宽（人类开发者 2026-11-04）：名称列按最长文件名自适应——
+     * 短名时大小列左移完整显示（无横向滚动条）；名称超长时名称列封顶为
+     * 可用宽度、横向滚动条接管。旧固定列宽未计入垂直滚动条占用的客户宽，
+     * 146 张图时大小列被右缘裁掉（11.1 MB 只剩 11.1 ME）。 */
+    {
+        RECT lrc; GetClientRect(g_app.hwndImgList, &lrc);
+        int clientw = lrc.right - lrc.left;
+        /* 大小列：自适应内容（"11.1 MB" 等），保底 60px */
+        SendMessageW(g_app.hwndImgList, LVM_SETCOLUMNWIDTH, 1, LVSCW_AUTOSIZE);
+        int sizew = (int)SendMessageW(g_app.hwndImgList, LVM_GETCOLUMNWIDTH, 1, 0);
+        if (sizew < pt_scaled(60)) sizew = pt_scaled(60);
+        SendMessageW(g_app.hwndImgList, LVM_SETCOLUMNWIDTH, 1, sizew);
+        /* 名称列：自适应最长项，封顶为剩余宽度 */
+        SendMessageW(g_app.hwndImgList, LVM_SETCOLUMNWIDTH, 0, LVSCW_AUTOSIZE);
+        int namew = (int)SendMessageW(g_app.hwndImgList, LVM_GETCOLUMNWIDTH, 0, 0);
+        int avail = clientw - sizew - pt_scaled(8);
+        if (namew > avail) namew = avail;
+        if (namew < pt_scaled(60)) namew = pt_scaled(60);
+        SendMessageW(g_app.hwndImgList, LVM_SETCOLUMNWIDTH, 0, namew);
+    }
 }
 
 /* 清空列表并释放每行挂在 lParam 上的 section 副本 */
