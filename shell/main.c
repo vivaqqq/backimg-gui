@@ -37,7 +37,7 @@
  *            修复 Kimi K3.1 Pro 复审确认的 14 项问题）。本版界面零改动。
  *   v1.3.18：DLL 配套升级为 v1.3.18 审计修复版（详见《变更清单_CHANGELOG_v1.3.18.md》）。
  *            界面改动：移除状态栏「已提权/未提权」胶囊 —— 它显示的是外壳进程自身的
- *            管理员状态，静态不变、与 DLL 注册状态无关，紧挨着"DLL 未注册"极易
+ *            管理员状态，静态不变、与 DLL 注册状态无关，紧挨着"DLL not registered"极易
  *            误导用户以为注册/提权出了问题。其余界面零改动。
  *   v1.3.17：配套 DLL 修复 v1.3.16 审计发现的 9 项问题（详见
  *            《变更清单_CHANGELOG_v1.3.17.md》）。要点：
@@ -100,7 +100,7 @@
  *            StepNoProc（圆外四角）四处统一在绘制前铺父容器底色
  *          - 豆包核验观察点 #1/#2：custom 未勾选时 v_folder 不影响生效目录，
  *            EN_CHANGE 与「选择...」不再无条件失效张数缓存/重扫目录
- *          - 豆包核验观察点 #3：允许"路径不配图"的专属规则（img 留空直接写入，
+ *          - 豆包核验观察点 #3：允许"no image on this path"的专属规则（img 留空直接写入，
  *            用于清背景），对齐 Python 版 _adv_add 行为
  *   v1.3.14【重大堆越界修复】（用户实测：选目录后点保存配置→卡死退出、
  *          config.ini 写烂——节名丢 ]/键值丢失/中文注释变 mojibake/整块重复）：
@@ -119,15 +119,15 @@
  *            资源 DLL 与 plugin 目录 DLL 各算一次 SHA256 并比对——不一致弹警告；
  *            点「注册(提权)」前不一致弹确认框，用户选否则中止注册（防本地 DLL
  *            被替换后照常注册）
- *          - P2 自定义图片目录"选完没反应"：点「选择...」选完目录后，若
- *            custom 开关未勾选，弹询问"是否同时勾选"，选是自动勾上并切换列表
- *            （保留 C 版"列表=实际生效目录"的严格逻辑，只补提示）
+ *          - P2 自定义图片目录"no reaction after selection"：点「选择...」选完目录后，若
+ *            custom 开关未勾选，弹询问"also tick the box"，选是自动勾上并切换列表
+ *            （保留 C 版"list = actual active folder"的严格逻辑，只补提示）
  *          - P2 界面日志多行内容挤成一条：log_view_add 按换行拆分逐条入列表
  *            （browse_plugin 的 4 行状态信息不再带 \r\n 控制字符挤在一行）
  *          - P3 手改自定义目录输入框即时生效：EN_CHANGE 使张数缓存失效，
  *            custom 勾选时同步刷新图片列表与规则图片下拉
  *          - P3 大图预览提示：>30MB 的图片解码前记日志并把光标换成等待态，
- *            解码结束恢复（对齐 Python 版 v1.2.3 的"先提示"行为）
+ *            解码结束恢复（对齐 Python 版 v1.2.3 的"prompt first"行为）
  *          - P3 保存失败不再假报成功：write_text_file/ini_commit 返回 bool，
  *            失败时 log_err + 弹错误框（config.ini 只读/被占用不再静默丢失）
  *          - P3 复制摘要补诊断三件套：DLL SHA256、DLL 大小、插件 CLSID
@@ -144,7 +144,7 @@
  *            圆形统一改走 GDI+ 路径（SmoothingModeAntiAlias），g_gdiplus_ok
  *            不可用或半径过小时回退 GDI
  *          - posType 选中段整钮着色（蓝框）：之前选中只有文字变蓝，用户要求
- *            像"应急禁用"按钮一样按下时整个按钮有颜色——选中段改蓝底白字
+ *            像"emergency off"按钮一样按下时整个按钮有颜色——选中段改蓝底白字
  *            （实机反馈优先于设计稿的白底蓝字）
  *   v1.3.9 实机标注三项：
  *          - 右卡内容填满整卡（红框）：v1.3.8 的流程块把 extra 全计入块高却只
@@ -158,7 +158,7 @@
  *            TrackPopupMenu（与「界面缩放」同一模式）：插入 CLSID、
  *            图片文件名均为纯选择型，行为对齐旧实现（占位项/文本匹配回选）
  *   v1.3.8 实机标注三项：
- *          - 摘要按钮排下移（黄框箭头）：按钮排从"紧跟摘要网格"移到生效流程块
+ *          - 摘要按钮排下移（黄框箭头）：按钮排从"right under the summary grid"移到生效流程块
  *            正上方 S(8) 处，与网格之间的大空档改到按钮排之前；矮窗流程块
  *            跳过时回退紧跟摘要网格
  *          - posType 分段去背景色（红框）：容器 #EDF1F7 灰底改白，未选中段
@@ -166,21 +166,21 @@
  *          - 开关行距填满绿框：剩余空间 70% 注入开关行距（内容在行内居中），
  *            行距呼吸感对齐下方「图片显示位置」区块；其余 30% 仍分摊三处间距
  *   v1.3.7 实机标注三项：
- *          - 按钮"圆角外的直角阴影"：主窗口缺 WM_CTLCOLORBTN 分支，owner-draw
+ *          - 按钮"square shadow outside rounded corners"：主窗口缺 WM_CTLCOLORBTN 分支，owner-draw
  *            按钮擦底落到 DefWindowProc 返回系统灰 COLOR_BTNFACE，圆角四角
  *            露出直角灰块。按按钮父容器底色返回画刷（与 CTLCOLORSTATIC 同规则）
  *          - 生效流程块整体下移贴卡底（红框箭头）：v1.3.6 给三处间距封顶后
  *            未分配的余量悬空，块底距卡底最多差 80px+；剩余量改为全部塞进
  *            块顶前距，块内部保持紧凑、整体贴底
  *          - posType 七段未选中段去掉白色填充底（黑框）：保留 1px 边框的
- *            "按钮感"，但底色透出容器灰，只有选中段保持白底蓝边
+ *            "button feel"，但底色透出容器灰，只有选中段保持白底蓝边
  *   v1.3.6 实机标注四项（对照原版与设计稿）：
  *          - 底栏「刷新状态/备份配置/恢复配置」右对齐到窗口右缘（设计稿 .actions
  *            中间有 spacer，前 4 个左起、后 3 个靠右；v1.3.4 起一直 7 个连排左起）
- *          - posType 七段每个加 1px 按钮边框（用户要求"像选择按钮一样的按钮感"：
+ *          - posType 七段每个加 1px 按钮边框（用户要求"button feel like the selector buttons"：
  *            未选中白底灰边灰字、选中白底蓝边蓝字，容器 #EDF1F7 保留）
  *          - 流程提示条固定 26px 不再吃余量（v1.3.5 的 add_h 把它撑到 40px+，
- *            一条又高又灰的大条横在卡底，用户指出"背景是灰色的，原版不是"）
+ *            一条又高又灰的大条横在卡底，用户指出"background is gray; the original is not"）
  *          - 选项卡弃用 SysTabControl32（TCS_BUTTONS 系统 3D 边框去不掉，owner-draw
  *            只接管内容区），改 3 个纯自绘按钮：无边框白底、hover 浅灰、
  *            选中蓝字 + 底部 3px 蓝条压住行底分隔线
@@ -239,7 +239,7 @@
 /* ------------------------------------------------------------------ */
 /* 常量与版本                                                          */
 /* ------------------------------------------------------------------ */
-#define APP_NAME_W      L"backimg图形板"
+#define APP_NAME_W      L"backimg Panel"
 #define GUI_VERSION     "1.3.28"
 #define DLL_VERSION     "1.3.28"
 #define CLSID_STR       "{ED15A97D-FE3E-4CDE-98FF-BC46B02896B0}"
@@ -307,14 +307,14 @@ static const COLORREF C_HOVER_BG     = RGB(0xF4, 0xF6, 0xFA);   /* .btn:hover / 
 static const COLORREF C_HOVER_LINE   = RGB(0xCD, 0xD5, 0xE1);   /* .btn:hover 边框 */
 
 static const WCHAR *POS_NAMES[] = {
-    L"左上角", L"右上角", L"左下角", L"右下角",
-    L"居中", L"缩放", L"缩放并填充"
+    L"Top left", L"Top right", L"Bottom left", L"Bottom right",
+    L"Center", L"Fit", L"Fill"
 };
 
 static const WCHAR *BUILTIN_CLIDS[] = {
-    L"此电脑",
-    L"快速访问",
-    L"网络"
+    L"This PC",
+    L"Quick access",
+    L"Network"
 };
 static const WCHAR *BUILTIN_GUIDS[] = {
     L"20D04FE0-3AEA-1069-A2D8-08002B30309D",
@@ -410,7 +410,7 @@ typedef struct {
     int  v_posType;
     int  v_alpha;
     /* v1.3.25(D1)：定时轮换间隔改用【秒】为唯一权威单位（0=不轮换）。
-     * v1.3.20~v1.3.24 的 v_rotmin 只能整分钟，用户实测"1 分钟都嫌慢"，
+     * v1.3.20~v1.3.24 的 v_rotmin 只能整分钟，用户实测"even 1 minute feels slow"，
      * 需要秒级轮换。界面显示单位（分钟/秒钟）由 v_rotunit 决定，
      * 但内部一律换算成秒落盘（config.ini → randomVal），不吃小数。 */
     int  v_rotsec;          /* 定时轮换间隔（秒，0=不轮换，上限 86400=一天） */
@@ -475,7 +475,7 @@ typedef struct {
 static AppState g_app;
 
 /* 缩放选项 */
-static const WCHAR *SCALE_CHOICES[] = { L"自动", L"70%", L"80%", L"90%", L"100%", L"110%", L"125%", L"150%" };
+static const WCHAR *SCALE_CHOICES[] = { L"Auto", L"70%", L"80%", L"90%", L"100%", L"110%", L"125%", L"150%" };
 static const double SCALE_FACTORS[] = { 1.0, 0.70, 0.80, 0.90, 1.0, 1.10, 1.25, 1.50 };
 
 /* ------------------------------------------------------------------ */
@@ -722,9 +722,9 @@ static void log_msg(int level, const WCHAR *msg) {
     WCHAR line[2048];
     WCHAR prefix[32];
     const WCHAR *tag = L"";
-    if (level == 1) tag = L"[错误] ";
-    else if (level == 2) tag = L"[警告] ";
-    else if (level == 3) tag = L"[提示] ";
+    if (level == 1) tag = L"[Error] ";
+    else if (level == 2) tag = L"[Warn] ";
+    else if (level == 3) tag = L"[Info] ";
     sfmt(prefix, 32, L"[%02d:%02d:%02d]", st.wHour, st.wMinute, st.wSecond);
     sfmt(line, 2048, L"%s %s%s", prefix, tag, msg);
     log_append(line, level);
@@ -935,7 +935,7 @@ static void ini_write_value(WCHAR **ptext, const char *section, const char *key,
     /* 构建新文本 */
     /* v1.3.14【重大堆越界修复】：原 malloc(32) 只分配 32【字节】(16 个 WCHAR)，
        但 out_cap=32 按【字符数】用——文本超 16 字符后 memcpy 越界写堆：
-       砸坏堆元数据→保存时崩溃("卡死退出")；砸中相邻块→其它数据被拼进
+       砸坏堆元数据→保存时崩溃("kill on hang")；砸中相邻块→其它数据被拼进
        宽串写进 ini(mojibake/内容重复)。v1.3.0 起潜伏，属字节/字符单位混淆。 */
     WCHAR *out = (WCHAR*)malloc(64 * sizeof(WCHAR));
     if (!out) return;
@@ -1225,8 +1225,8 @@ static void ensure_self_contained(void) {
     WCHAR dll[MAX_PATH_W], ini[MAX_PATH_W];
     path_join(dll, MAX_PATH_W, g_app.plugin_dir, DLL_NAME);
     path_join(ini, MAX_PATH_W, g_app.plugin_dir, INI_NAME);
-    if (!extract_resource(IDR_DLL, dll)) log_warn(L"解包 ExplorerBgTool.dll 失败（可能已存在或目录不可写）");
-    if (!extract_resource(IDR_INI, ini)) log_warn(L"解包 config.ini 失败（可能已存在或目录不可写）");
+    if (!extract_resource(IDR_DLL, dll)) log_warn(L"Failed to unpack ExplorerBgTool.dll (already exists or folder not writable)");
+    if (!extract_resource(IDR_INI, ini)) log_warn(L"Failed to unpack config.ini (already exists or folder not writable)");
     /* app.ico 由 EXE 资源直接加载，无需落地 */
 }
 
@@ -1271,23 +1271,23 @@ static void detect_registered(void) {
                                   (_wcsicmp(tm, L"Apartment") == 0));
                     sfmt(g_app.reg_detail[1], 512, L"  %s [%s] InProcServer32: %s  ThreadingModel=%s%s",
                          L"✓", clsid_hive_names[i],                          wcsrchr(path, L'\\') ? wcsrchr(path, L'\\')+1 : path,
-                         tm[0] ? tm : L"(未设)",
+                         tm[0] ? tm : L"(not set)",
                          tm_ok ? L"" : L" ⚠");
                 } else {
-                    sfmt(g_app.reg_detail[1], 512, L"  %s [%s] InProcServer32 存在但无 DLL 路径", L"✗", clsid_hive_names[i]);
+                    sfmt(g_app.reg_detail[1], 512, L"  %s [%s] InProcServer32 exists but no DLL path", L"✗", clsid_hive_names[i]);
                 }
                 RegCloseKey(hInproc);
-                sfmt(g_app.reg_detail[0], 512, L"  %s [%s] CLSID 已注册", L"✓", clsid_hive_names[i]);
+                sfmt(g_app.reg_detail[0], 512, L"  %s [%s] CLSID registered", L"✓", clsid_hive_names[i]);
             } else {
-                sfmt(g_app.reg_detail[0], 512, L"  %s [%s] CLSID 键存在但无 InProcServer32", L"✗", clsid_hive_names[i]);
+                sfmt(g_app.reg_detail[0], 512, L"  %s [%s] CLSID key exists but no InProcServer32", L"✗", clsid_hive_names[i]);
             }
             RegCloseKey(hKey);
         } else if (r == ERROR_ACCESS_DENIED) {
-            sfmt(g_app.reg_detail[0], 512, L"  %s [%s] 无读取权限", L"⚠", clsid_hive_names[i]);
+            sfmt(g_app.reg_detail[0], 512, L"  %s [%s] no read permission", L"⚠", clsid_hive_names[i]);
         }
     }
     if (!clsid_found && g_app.reg_detail[0][0] == 0)
-        sfmt(g_app.reg_detail[0], 512, L"  %s CLSID 键不存在", L"✗");
+        sfmt(g_app.reg_detail[0], 512, L"  %s CLSID key does not exist", L"✗");
 
     /* ③ BHO */
     bool bho_found = false;
@@ -1304,15 +1304,15 @@ static void detect_registered(void) {
             if (r == ERROR_SUCCESS && type == REG_DWORD)
                 sfmt(niestr, 64, L"  NoIE=%lu", nie);
             else
-                wcscpy(niestr, L"  NoIE=(未设)");
-            sfmt(g_app.reg_detail[2], 512, L"  %s [%s] BHO 已启用%s", L"✓", bho_hive_names[i], niestr);
+                wcscpy(niestr, L"  NoIE=(not set)");
+            sfmt(g_app.reg_detail[2], 512, L"  %s [%s] BHO enabled%s", L"✓", bho_hive_names[i], niestr);
             RegCloseKey(hKey);
         } else if (r == ERROR_ACCESS_DENIED) {
-            sfmt(g_app.reg_detail[2], 512, L"  %s [%s] BHO 节点无读取权限", L"⚠", bho_hive_names[i]);
+            sfmt(g_app.reg_detail[2], 512, L"  %s [%s] BHO key: no read permission", L"⚠", bho_hive_names[i]);
         }
     }
     if (!bho_found && g_app.reg_detail[2][0] == 0)
-        sfmt(g_app.reg_detail[2], 512, L"  %s BHO 键不存在", L"✗");
+        sfmt(g_app.reg_detail[2], 512, L"  %s BHO key does not exist", L"✗");
 
     /* ④ FolderExtensions */
     bool fe_found = false;
@@ -1326,19 +1326,19 @@ static void detect_registered(void) {
             DWORD dm; size = sizeof(dm);
             r = RegQueryValueExW(hKey, L"DriveMask", NULL, &type, (BYTE*)&dm, &size);
             bool dm_ok = (r == ERROR_SUCCESS && type == REG_DWORD && dm == 255);
-            sfmt(g_app.reg_detail[3], 512, L"  %s [%s] 文件对话框支持 DriveMask=%lu%s",
+            sfmt(g_app.reg_detail[3], 512, L"  %s [%s] File dialog support DriveMask=%lu%s",
                  L"✓", fe_hive_names[i], (r == ERROR_SUCCESS && type == REG_DWORD) ? dm : 0,
                  dm_ok ? L"" : L" ⚠");
             RegCloseKey(hKey);
         } else if (r == ERROR_ACCESS_DENIED) {
-            sfmt(g_app.reg_detail[3], 512, L"  %s [%s] 文件对话框节点无读取权限", L"⚠", fe_hive_names[i]);
+            sfmt(g_app.reg_detail[3], 512, L"  %s [%s] File dialog key: no read permission", L"⚠", fe_hive_names[i]);
         }
     }
     if (!fe_found && g_app.reg_detail[3][0] == 0)
-        sfmt(g_app.reg_detail[3], 512, L"  %s 文件对话框键不存在", L"✗");
+        sfmt(g_app.reg_detail[3], 512, L"  %s File dialog key does not exist", L"✗");
 
     for (int i = 0; i < 4; i++) if (g_app.reg_detail[i][0] == 0)
-        sfmt(g_app.reg_detail[i], 512, L"  %s 未在注册表发现", L"✗");
+        sfmt(g_app.reg_detail[i], 512, L"  %s not found in registry", L"✗");
 }
 
 /* ------------------------------------------------------------------ */
@@ -1923,7 +1923,7 @@ static LRESULT CALLBACK DividerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 }
 
 /* 摘要值：等宽字（设计稿 .sval font:12px var(--mono)），超宽出省略号
-   （v1.3.3：旧版是 STATIC 硬截断，"70 / 255（27%）" 会被切掉尾巴） */
+   （v1.3.3：旧版是 STATIC 硬截断，"70 / 255(27%)" 会被切掉尾巴） */
 static LRESULT CALLBACK SumValProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_PAINT: {
@@ -1963,7 +1963,7 @@ static HWND new_chip(HWND parent, const WCHAR *text, int x, int y, bool readout,
     HFONT f = readout ? g_app.font_mono : g_app.font_chip;
     int pad = pt_scaled(readout ? 9 : 5);
     int cw = w;
-    if (cw <= 0) cw = text_width_f(text, f) + pad*2 + 2;
+    if (cw <= 0) cw = text_width_f(text, f) + pad*2 + 4;
     int chh = pt_scaled(readout ? 22 : 16);
     HWND hh = CreateWindowW(L"backimgChip", text, WS_CHILD | WS_VISIBLE,
                             x, y, cw, chh, parent, NULL, NULL, NULL);
@@ -2170,7 +2170,7 @@ static LRESULT CALLBACK SliderProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
         RECT rc; GetClientRect(hwnd, &rc);
         /* v1.3.13：先铺满客户区底色再画（轨道只有 6px 高，圆钮/阴影凸出轨道
            上下，旧实现凸出区从不重画——快速拖动时旧圆钮残环逐帧累积成鬼影）；
-           双缓冲绘制，顺带消除"铺底+重画"两步之间的闪烁 */
+           双缓冲绘制，顺带消除"backfill + repaint"两步之间的闪烁 */
         HDC mem = CreateCompatibleDC(dc);
         HBITMAP bmp = CreateCompatibleBitmap(dc, rc.right, rc.bottom);
         HGDIOBJ ob = SelectObject(mem, bmp);
@@ -2326,24 +2326,23 @@ static int g_panel_h = 470;
    下拉按钮复用「界面缩放」的画法（new_btn_dropdown + TrackPopupMenu），
    当前档打勾，视觉与界面其他部分完全一致。
    ------------------------------------------------------------------ */
-static const WCHAR *ROT_CHOICES[] = { L"不轮换", L"每 1 分钟", L"每 2 分钟",
-                                      L"每 5 分钟", L"每 10 分钟", L"每 30 分钟",
-                                      L"自定义…" };
+static const WCHAR *ROT_CHOICES[] = { L"No rotation", L"Every 1 min", L"Every 2 min",
+                                      L"Every 5 min", L"Every 10 min", L"Every 30 min",
+                                      L"Custom…" };
 static const int ROT_SECONDS[]   = { 0, 60, 120, 300, 600, 1800, -1 };
 /* v1.3.25(D1)：单位下拉两个选项（自定义态显示在输入框右侧） */
-static const WCHAR *ROT_UNIT_CHOICES[] = { L"分钟", L"秒钟" };
+static const WCHAR *ROT_UNIT_CHOICES[] = { L"Minutes", L"Seconds" };
 #define ROT_UNIT_MIN  0
 #define ROT_UNIT_SEC  1
 /* v1.3.28(P2，Deepseek 复审)：hRotLabel 死变量清除 —— v1.3.26 删掉
- * "说明文字横移"逻辑后它创建即无读者（赋值后无任何读取），句柄不必
+ * "caption slide"逻辑后它创建即无读者（赋值后无任何读取），句柄不必
  * 保存，new_label_ex 返回值直接丢弃。 */
 /* v1.3.26(E1) 用户红框改动：自定义输入框+单位框挪到 random 行下方专用子行，
  * 宽度放开 —— 数字与「分钟/秒钟」都不再挤在开关行里。
  * v1.3.27(F2，Deepseek 审查)：v1.3.25 遗留的五个位置全局（g_rot_cx /
- * g_rot_label_y / g_rot_sub_y / g_rot_edit_x / g_rot_unit_x）在"说明文字
- * 横移"逻辑删除后已无读者（或只在 rot_ui_init 内部使用），全部降为
+ * g_rot_label_y / g_rot_sub_y / g_rot_edit_x / g_rot_unit_x）在"caption\n * slide"逻辑删除后已无读者（或只在 rot_ui_init 内部使用），全部降为
  * rot_ui_init 局部变量；全局只留两个子行控件句柄 + 自定义态标志。 */
-static HWND hRotSubLabel;   /* 子行标题"自定义间隔"（v1.3.27(F1)：随随机开关显隐） */
+static HWND hRotSubLabel;   /* 子行标题"custom interval"（v1.3.27(F1)：随随机开关显隐） */
 static HWND hRotSubHint;    /* 非自定义态的子行提示文字 */
 /* v1.3.27(F3，Deepseek 审查)：自定义态改用独立状态位判定，不再纯靠数值反推 ——
  * 用户在自定义态手敲 60/120/300 等恰好命中预设秒数时，输入框不再当场消失、
@@ -2399,10 +2398,10 @@ static void build_basic_tab(HWND parent) {
     HWND right = new_card_panel(parent, x2, y, cardw, cardh);
 
     int ly = S(12);
-    new_label_ex(left, L"显示选项", S(12), ly, S(80), S(18), true, C_TEXT, false, false);
+    new_label_ex(left, L"Display options", S(12), ly, S(150), S(18), true, C_TEXT, false, false);
     /* UI-4：hint 右对齐到卡片右缘 */
     {
-        const WCHAR *hint = L"改动后点底部「保存配置」生效";
+        const WCHAR *hint = L"After changes, click Save config at the bottom to apply";
         int hw = text_width_f(hint, g_app.font_ui);
         if (hw > cardw - S(140)) hw = cardw - S(140);
         new_label_ex(left, hint, cardw - S(16) - hw, ly + S(2), hw, S(16),
@@ -2417,8 +2416,8 @@ static void build_basic_tab(HWND parent) {
     int row_pitch = S(44);
     {
         int seg_h = S(30);
-        int used = S(12) + S(30) + S(44)*4 + S(28) + gapA + S(22) +
-                   (S(3) + seg_h + S(2) + seg_h + S(3)) + gapB + S(22) + S(30) + gapC;
+    int used = S(12) + S(30) + S(44)*4 + S(28) + gapA + S(22) +
+               (S(3) + seg_h + S(2) + seg_h + S(3)) + S(2) + S(30) + gapB + S(22) + S(30) + gapC;
         int extra = cardh - used;
         if (extra > 0) {
             /* v1.3.8（用户绿框）：剩余空间 70% 先注入开关行距，让 4 行开关
@@ -2441,21 +2440,21 @@ static void build_basic_tab(HWND parent) {
     }
 
     ly += add_switch_row(left, cardw, ly, ID_SW_FOLDEREXT, &hSwFolderExt,
-                         L"在文件对话框中也启用背景图", L"folderExt",
-                         L"默认只在文件夹窗口显示，勾上后\"打开/保存\"对话框也有背景", false, row_pitch);
+                         L"Also enable background in file dialogs", L"folderExt",
+                         L"Folder windows only; tick adds Open/Save dialogs too", false, row_pitch);
     ly += add_switch_row(left, cardw, ly, ID_SW_NOERROR, &hSwNoerror,
-                         L"忽略错误", L"noerror",
-                         L"找不到图或出错时不弹窗，建议保持勾选", true, row_pitch);
+                         L"Ignore errors", L"noerror",
+                         L"No popup on missing image or error; keep ticked", true, row_pitch);
     int rot_row_y = ly;     /* v1.3.20(C)：random 行行顶，供轮换控件定位 */
     ly += add_switch_row(left, cardw, ly, ID_SW_RANDOM, &hSwRandom,
-                         L"随机显示图片", L"random",
-                         L"多张图时随机轮换（至少需 2 张图）", true, row_pitch);
-    /* v1.3.26(E1) 用户红框：random 行下方常驻一条"自定义间隔"子行，
+                         L"Randomize images", L"random",
+                         L"Rotate randomly with multiple images (needs at least 2)", true, row_pitch);
+    /* v1.3.26(E1) 用户红框：random 行下方常驻一条"custom interval"子行，
      * 高度计入版面（下方 used 同步 +S(28)），非自定义态显示提示文字，
-     * 避免"突然撑开/收起"的版面跳动。 */
+     * 避免"sudden expand/collapse"的版面跳动。 */
     int rot_sub_y = ly;
     ly += S(28);
-    {   /* v1.3.20(C)：random 行右侧加"定时轮换"下拉，紧贴开关左侧；
+    {   /* v1.3.20(C)：random 行右侧加"timed rotation"下拉，紧贴开关左侧；
            v1.3.26(E1) 用户红框：自定义输入框+单位框挪到下方专用子行，
            这里只留档位下拉，坐标随子行行顶一并传入 */
         int off = (row_pitch - S(44)) / 2;
@@ -2464,12 +2463,12 @@ static void build_basic_tab(HWND parent) {
                     S(112), S(24), rot_sub_y);
     }
     ly += add_switch_row(left, cardw, ly, ID_SW_CUSTOM, &hSwCustom,
-                         L"使用自定义图片文件夹", L"custom",
-                         L"勾上后可指定任意目录，不局限于插件 Image 文件夹", true, row_pitch);
+                         L"Use a custom image folder", L"custom",
+                         L"Tick to pick any folder, not just the plugin's Image folder", true, row_pitch);
     ly += gapA;
 
-    new_label_ex(left, L"图片显示位置", S(12), ly, S(90), S(16), true, C_TEXT, false, false);
-    new_chip(left, L"posType", S(12) + text_width(L"图片显示位置", true, false) + S(8),
+    new_label_ex(left, L"Image position", S(12), ly, S(140), S(16), true, C_TEXT, false, false);
+    new_chip(left, L"posType", S(12) + text_width(L"Image position", true, false) + S(8),
              ly + S(1), false, 0);
     ly += S(22);
     /* UI-5：7 档外加统一容器，上行 4 个、下行 3 个
@@ -2496,42 +2495,47 @@ static void build_basic_tab(HWND parent) {
     }
     /* v1.3.16：补一行行为说明 —— 背景图现在一律按原图宽高比等比缩放，
      * 窗口任意尺寸（拖动/最大化/全屏）下都不变形、不出框，并实时跟随。
-     * "缩放"= 整图完整适配窗口；"缩放并填充"= 等比铺满并裁掉溢出。 */
+     * "Fit"= 整图完整适配窗口；"Fit & fill"= 等比铺满并裁掉溢出。 */
     {
-        /* v1.3.17：把"缩放"档的语义变化说明白 ——
-         *   v1.3.15 的"缩放"是【拉伸填满窗口】（会变形）；
+        /* v1.3.17：把"Fit"档的语义变化说明白 ——
+         *   v1.3.15 的"Fit"是【拉伸填满窗口】（会变形）；
          *   v1.3.16 起改为【等比完整适配窗口】（不变形，四周可能留白）。
-         *   想要"铺满且不变形"请用"缩放并填充"（等比铺满+居中裁切）。 */
+         *   想要"fill without distortion"请用"Fit & fill"（等比铺满+居中裁切）。 */
         const WCHAR *note =
-            L"一律按原图比例等比缩放，不变形，随窗口实时跟随；"
-            L"\x300c缩放\x300d=整图完整适配(四周可能留白)，"
-            L"\x300c缩放并填充\x300d=等比铺满并裁掉溢出";
-        new_label_ex(left, note, S(12), ly + S(2), cardw - S(24), S(14),
-                     false, C_TEXT3, false, false);
-        ly += S(18);
+            L"Always scaled to original aspect ratio, no distortion, follows the window;\n"
+            L"\"Fit\" = whole image visible; \"Fill\" = fill and crop the overflow";
+        {
+            /* 英文版（人类开发者第四轮）：SS_LEFTNOWORDWRAP 不换行，说明改两行
+             * 需要换成 SS_LEFT 才能按 \n 分行显示 */
+            HWND hn = new_label_ex(left, note, S(12), ly + S(2), cardw - S(24), S(30),
+                                   false, C_TEXT3, false, false);
+            SetWindowLongPtrW(hn, GWL_STYLE,
+                              (GetWindowLongPtrW(hn, GWL_STYLE) & ~SS_TYPEMASK) | SS_LEFT);
+        }
+        ly += S(34);
     }
     ly += gapB;
 
     /* UI-3：不透明度 readout 改芯片
        v1.3.5：滑块 26→30 高（设计稿 input[type=range] height:26px + 触控余量） */
-    new_label_ex(left, L"不透明度", S(12), ly, S(70), S(16), true, C_TEXT, false, false);
-    new_chip(left, L"imgAlpha", S(12) + text_width(L"不透明度", true, false) + S(8),
+    new_label_ex(left, L"Opacity", S(12), ly, S(70), S(16), true, C_TEXT, false, false);
+    new_chip(left, L"imgAlpha", S(12) + text_width(L"Opacity", true, false) + S(8),
              ly + S(1), false, 0);
     {
-        int rw = text_width_f(L"255 / 255（100%）", g_app.font_mono) + pt_scaled(18) + 2;
+        int rw = text_width_f(L"255 / 255(100%)", g_app.font_mono) + pt_scaled(18) + 2;
         hSliderAlpha = new_trackbar(left, ID_SLIDER_ALPHA, S(12), ly + S(22),
                                     cardw - S(24) - rw - S(12), S(30), 0, 255);
-        g_app.hwndAlphaReadout = new_chip(left, L"70 / 255（27%）",
+        g_app.hwndAlphaReadout = new_chip(left, L"70 / 255(27%)",
                                           cardw - S(12) - rw, ly + S(26), true, rw);
     }
 
     /* 右卡：当前生效配置 */
     int ry = S(12);
-    new_label_ex(right, L"当前生效配置", S(12), ry, S(110), S(18), true, C_TEXT, false, false);
-    new_chip(right, L"实时", S(12) + text_width(L"当前生效配置", true, false) + S(10),
+    new_label_ex(right, L"Live configuration", S(12), ry, S(170), S(18), true, C_TEXT, false, false);
+    new_chip(right, L"Live", S(12) + text_width(L"Live configuration", true, false) + S(10),
              ry + S(1), false, 0);
     {
-        const WCHAR *ht = L"本次刷新：--:--:--";
+        const WCHAR *ht = L"Last refresh: --:--:--";
         int hw = text_width_f(ht, g_app.font_ui) + S(24);   /* v1.3.9 加大余量：时间尾部曾被裁 */
         g_app.hwndSumTime = new_label_ex(right, ht, cardw - S(20) - hw, ry + S(2), hw, S(16),
                                          false, C_TEXT3, false, false);
@@ -2545,7 +2549,7 @@ static void build_basic_tab(HWND parent) {
     int grid_pitch = S(24);
     int flow_eg = 0, flow_ep = 0, flow_et = 0;
     {
-        const WCHAR *bw_txt[5] = { L"刷新摘要", L"查看 config.ini", L"复制摘要", L"应急禁用", L"恢复原配置" };
+        const WCHAR *bw_txt[5] = { L"Refresh summary", L"View config.ini", L"Copy summary", L"Emergency off", L"Restore original" };
         int tot = 0;
         for (int i = 0; i < 5; i++) tot += text_width_f(bw_txt[i], g_app.font_ui) + S(26);
         tot += S(8) * 4;
@@ -2568,15 +2572,13 @@ static void build_basic_tab(HWND parent) {
     /* 摘要网格：宽度充足时前 6 项两两并排，否则全部单列
        UI-2：键名改自绘（超宽出省略号），键列 128；UI-8：值行比键行低 1px */
     const WCHAR *sum_keys[9] = {
-        L"文件对话框", L"忽略错误", L"随机显示",
-        L"自定义目录", L"显示位置", L"不透明度",
-        L"自定义路径", L"图片张数", L"DLL 状态"
+        L"File dialogs", L"Ignore errors", L"Random images",
+        L"Custom folder", L"Position", L"Opacity",
+        L"Custom path", L"Image count", L"DLL status"
     };
-    /* v1.3.3：键列 128→108（设计稿 .skey width 106px）。
-     * 2026-11-04 增补（人类开发者提出）：键名去掉 ini 英文前缀改纯中文，
-     * 键列 108→80，宽度进一步让给值列——G:\手机备份 这类长路径能多显示一截 */
+    /* v1.3.3：键列 128→108（设计稿 .skey width 106px），省下的宽度给值列 */
     int colw = (cardw - S(24) - S(16)) / 2;
-    int keyw2 = S(80);
+    int keyw2 = S(96);
     if (colw >= S(200)) {
         /* 设计稿：9 项两列网格；最后一项 dllstatus 值长，独占整行 */
         for (int i = 0; i < 9; i++) {
@@ -2601,16 +2603,16 @@ static void build_basic_tab(HWND parent) {
     }
 
     /* 摘要操作按钮 + 生效流程（v1.3.8 重排，用户黄框箭头）：
-       流程块保持贴卡底，摘要按钮排从"紧跟摘要网格"下移到流程块正上方
+       流程块保持贴卡底，摘要按钮排从"right under the summary grid"下移到流程块正上方
        S(8) 处——v1.3.7 两者之间 add_s 的大空档，现在改到按钮排之前
        （按钮排与摘要网格之间留白）。矮窗流程块跳过时按钮回退紧跟网格。 */
     {
         const struct { int id; const WCHAR *txt; bool danger; } items[5] = {
-            { ID_BTN_SUM_REFRESH,  L"刷新摘要",       false },
-            { ID_BTN_OPEN_INI,     L"查看 config.ini", false },
-            { ID_BTN_COPY_SUM,     L"复制摘要",       false },
-            { ID_BTN_EMERGENCY,    L"应急禁用",       true  },
-            { ID_BTN_RESTORE_PREV, L"恢复原配置",     false },
+            { ID_BTN_SUM_REFRESH,  L"Refresh summary",       false },
+            { ID_BTN_OPEN_INI,     L"View config.ini", false },
+            { ID_BTN_COPY_SUM,     L"Copy summary",       false },
+            { ID_BTN_EMERGENCY,    L"Emergency off",       true  },
+            { ID_BTN_RESTORE_PREV, L"Restore original",     false },
         };
         int bw[5];
         int total = 0;
@@ -2669,10 +2671,10 @@ static void build_basic_tab(HWND parent) {
         /* 生效流程（几何已在上面算好，贴卡底） */
         if (flow_top >= 0) {
             int fy = flow_top;
-            new_label_ex(right, L"生效流程 · 改完配置按此顺序", S(12), fy, cardw - S(24), S(16), false, C_TEXT3, false, false);
+            new_label_ex(right, L"How to apply · follow this order after changes", S(12), fy, cardw - S(24), S(16), false, C_TEXT3, false, false);
             fy += g1;
-            const WCHAR *flow_name[3] = { L"保存配置", L"注册(提权)", L"重启资源管理器" };
-            const WCHAR *flow_desc[3] = { L"写入 config.ini", L"仅首次或更换 DLL 需要", L"让背景图立即生效" };
+            const WCHAR *flow_name[3] = { L"Save config", L"Register (admin)", L"Restart Explorer" };
+            const WCHAR *flow_desc[3] = { L"Write config.ini", L"Only needed once, or after swapping the DLL", L"Makes the background take effect immediately" };
             for (int i = 0; i < 3; i++) {
                 new_step_no(right, i + 1, S(12), fy + S(1), S(18));
                 new_label_ex(right, flow_name[i], S(38), fy, S(120), S(16), true, C_TEXT, false, false);
@@ -2681,7 +2683,7 @@ static void build_basic_tab(HWND parent) {
                 fy += pitch;
             }
             fy += S(16) + gtip - pitch;   /* fy 在最后一步 +pitch，提示条顶 = 最后一步内容底 + gtip */
-            new_flow_tip(right, L"之后只改参数：保存配置 → 重启资源管理器 即可",
+            new_flow_tip(right, L"Afterwards only: Save config → Restart Explorer",
                          S(12), fy, cardw - S(24), tip_h);
         }
     }
@@ -2690,19 +2692,19 @@ static void build_basic_tab(HWND parent) {
     int cy2 = y + cardh + S(14);
     int cw = g_app.cw - pad*2;
     HWND folderCard = new_card_panel(parent, x1, cy2, cw, folderCardH);
-    new_label_ex(folderCard, L"自定义图片目录", S(12), S(12), S(110), S(18), true, C_TEXT, false, false);
-    new_chip(folderCard, L"folder", S(12) + text_width(L"自定义图片目录", true, false) + S(10), S(13),
+    new_label_ex(folderCard, L"Custom image folder", S(12), S(12), S(150), S(18), true, C_TEXT, false, false);
+    new_chip(folderCard, L"folder", S(12) + text_width(L"Custom image folder", true, false) + S(10), S(13),
              false, 0);
     {
-        const WCHAR *hint = L"勾选上方 custom 才生效";
+        const WCHAR *hint = L"Only works when custom above is ticked";
         int hw = text_width_f(hint, g_app.font_ui);
         new_label_ex(folderCard, hint, cw - S(16) - hw, S(14), hw, S(16),
                      false, C_TEXT3, false, false);
     }
     /* v1.3.3：输入框与按钮统一 32px 高（设计稿 .path-row input / .btn height:32px） */
     g_app.hwndEditFolder = new_edit(folderCard, ID_EDIT_FOLDER, L"", S(12), S(36), cw - S(100), S(32), false);
-    new_btn(folderCard, ID_BTN_PICK_FOLDER, L"选择...", cw - S(80), S(36), S(68), S(32), false, false);
-    new_label_ex(folderCard, L"提示：不填自定义目录时，默认使用插件目录下的 Image 文件夹。",
+    new_btn(folderCard, ID_BTN_PICK_FOLDER, L"Browse...", cw - S(80), S(36), S(68), S(32), false, false);
+    new_label_ex(folderCard, L"Tip: with no custom folder set, the plugin's Image folder is used by default.",
                  S(12), S(74), cw - S(24), S(16), false, C_TEXT3, false, false);
 }
 
@@ -2717,17 +2719,17 @@ static void build_images_tab(HWND parent) {
     HWND left = new_card_panel(parent, pad, y, lw, h);
     HWND right = new_card_panel(parent, pad*2+lw, y, rw, h);
 
-    new_label(left, L"图片列表", S(12), S(10), S(100), S(18), true, C_TEXT);
+    new_label(left, L"Image list", S(12), S(10), S(100), S(18), true, C_TEXT);
     /* 计数靠右（设计稿 .list-head .cnt margin-left:auto） */
     {
-        const WCHAR *cnt = L"0 张 · png/jpg/bmp 最稳";
+        const WCHAR *cnt = L"0 images · png/jpg/bmp recommended";
         int tw = text_width_f(cnt, g_app.font_ui) + S(24);
         if (tw > lw - S(160)) tw = lw - S(160);
         g_app.hwndImgCount = new_label_ex(left, cnt, lw - S(12) - tw, S(12), tw, S(16),
                                           false, C_TEXT3, true, false);
     }
-    new_btn(left, ID_BTN_IMG_REFRESH, L"刷新列表", S(12), S(34), S(70), S(32), false, false);
-    new_btn(left, ID_BTN_OPEN_IMG_DIR, L"打开图片文件夹", S(88), S(34), S(100), S(32), false, false);
+    new_btn(left, ID_BTN_IMG_REFRESH, L"Refresh list", S(12), S(34), S(88), S(32), false, false);
+    new_btn(left, ID_BTN_OPEN_IMG_DIR, L"Open image folder", S(108), S(34), S(122), S(32), false, false);
     int lvH = h - S(84);
     if (lvH < S(60)) lvH = S(60);
     g_app.hwndImgList = new_listview(left, ID_LV_IMAGES, S(12), S(72), lw-S(24), lvH);
@@ -2741,7 +2743,7 @@ static void build_images_tab(HWND parent) {
         col.fmt = LVCFMT_RIGHT; col.cx = sizew;              ListView_InsertColumn(g_app.hwndImgList, 1, &col);
     }
 
-    new_label(right, L"预览", S(12), S(10), S(80), S(18), true, C_TEXT);
+    new_label(right, L"Preview", S(12), S(10), S(80), S(18), true, C_TEXT);
     /* 预览台按设计稿 16:9，空间不够时按可用高度反推宽度并居中 */
     {
         int avail_w = rw - S(24);
@@ -2754,7 +2756,7 @@ static void build_images_tab(HWND parent) {
                                           pv_x, S(34), pv_w, pv_h, right,
                                           (HMENU)(INT_PTR)ID_ST_PREVIEW, NULL, NULL);
         /* 设计稿 .pmeta：文件名（mono 粗）+ 尺寸 + GDI+ 解码 chip。
-           v1.3.11（用户红框）：三件套是"选中图片后"的元信息行，空状态下
+           v1.3.11（用户红框）：三件套是"after picking an image"的元信息行，空状态下
            文件名/尺寸为空串、只剩芯片孤零零挂着像乱入文字——初始隐藏，
            选中图片后由 preview_meta_update() 按 flex gap 排布显示 */
         int my = S(34) + pv_h + S(8);
@@ -2762,7 +2764,7 @@ static void build_images_tab(HWND parent) {
                                              true, C_TEXT2, false, true);
         g_app.hwndPreviewDim = new_label_ex(right, L"", S(12) + S(196), my, S(100), S(16),
                                             false, C_TEXT3, false, false);
-        g_app.hwndPreviewCodec = new_chip(right, L"GDI+ 解码", S(12) + S(300), my + S(1), false, 0);
+        g_app.hwndPreviewCodec = new_chip(right, L"GDI+ decode", S(12) + S(300), my + S(1), false, 0);
         ShowWindow(g_app.hwndPreviewName, SW_HIDE);
         ShowWindow(g_app.hwndPreviewDim, SW_HIDE);
         ShowWindow(g_app.hwndPreviewCodec, SW_HIDE);
@@ -2813,7 +2815,7 @@ static int combo_state_find(ComboState *cb, const WCHAR *txt) {
 /* v1.3.20(C)：定时轮换控件（random 行内右侧）                          */
 /* 下拉按钮与「界面缩放」同源（new_btn_dropdown + TrackPopupMenu，      */
 /* 当前档打勾）；选「自定义…」时左侧出现整数分钟输入框 —— 内层 EDIT     */
-/* 挂 ES_NUMBER，小数点/字母根本输不进去（从输入源头兑现"只认整数"）。  */
+/* 挂 ES_NUMBER，小数点/字母根本输不进去（从输入源头兑现"integers only"）。  */
 /* 随机显示关闭时整组置灰。                                            */
 /* ------------------------------------------------------------------ */
 
@@ -2825,10 +2827,10 @@ static void rot_ui_init(HWND parent, int cx, int cy, int w, int h, int suby) {
     /* v1.3.26(E1) 用户红框：顶部行只留 [说明文字][档位下拉]，
      * 输入框/单位框搬进 random 行下方的专用子行，宽度放开 ——
      * 输入框 S(80)（容 6 位数字，远超 86400 上限），单位框 S(88)
-     * 让"秒钟"二字完整显示，不再与开关文字挤在一行。 */
+     * 让"Seconds"二字完整显示，不再与开关文字挤在一行。 */
     /* v1.3.28(P2，Deepseek 复审)：句柄无读者，不再保存（见全局块注释） */
-    new_label_ex(parent, L"定时轮换", cx - S(64), label_y,
-                 S(56), S(16), false, C_TEXT3, true, false);
+    new_label_ex(parent, L"Timed rotation", cx - S(148), label_y,
+                 S(140), S(16), false, C_TEXT3, true, false);
     g_app.hwndRotBtn = new_btn_dropdown(parent, ID_CB_ROT, L"", cx, cy, w, h);
     /* v1.3.21(G1，Deepseek 审计)：漏了这行回填导致按钮面永远空白 ——
      * combo_state_set 里 if (cb->btn) 整句被跳过，按钮文字停留在创建时的 L""。
@@ -2837,23 +2839,23 @@ static void rot_ui_init(HWND parent, int cx, int cy, int w, int h, int suby) {
     combo_state_clear(&g_cb_rot);
     for (int i = 0; i < 7; i++) combo_state_add(&g_cb_rot, ROT_CHOICES[i]);
     /* 子行：标题 + 输入框 + 单位框（默认隐藏，选「自定义…」才出现） */
-    hRotSubLabel = new_label_ex(parent, L"自定义间隔", sx, suby + S(5),
-                                S(64), S(16), false, C_TEXT3, false, false);
-    edit_x = sx + S(64) + S(10);
+    hRotSubLabel = new_label_ex(parent, L"Custom interval", sx, suby + S(5),
+                                S(150), S(16), false, C_TEXT3, false, false);
+    edit_x = sx + S(150) + S(10);
     g_app.hwndRotMinEdit = new_edit(parent, ID_EDIT_ROTMIN, L"",
                                     edit_x, suby, S(80), S(24), false);
     SetWindowLongPtrW(g_app.hwndRotMinEdit, GWL_STYLE,
                       GetWindowLongPtrW(g_app.hwndRotMinEdit, GWL_STYLE) | ES_NUMBER);
     unit_x = edit_x + S(80) + S(6);
     g_app.hwndRotUnitBtn = new_btn_dropdown(parent, ID_CB_ROTUNIT, L"",
-                                            unit_x, suby, S(88), S(24));
+                                            unit_x, suby, S(96), S(24));
     g_cb_rotunit.btn = g_app.hwndRotUnitBtn;
     combo_state_clear(&g_cb_rotunit);
     for (int i = 0; i < 2; i++) combo_state_add(&g_cb_rotunit, ROT_UNIT_CHOICES[i]);
     /* 非自定义态的子行提示（与控件互斥显隐，见 rot_ui_sync） */
     hRotSubHint = new_label_ex(parent,
-        L"选上方「自定义…」后在此填写轮换间隔",
-        edit_x, suby + S(5), S(230), S(16), false, C_TEXT3, false, false);
+        L"Pick \"Custom…\" above, then enter the interval here",
+        sx, suby + S(5), S(424), S(16), false, C_TEXT3, false, false);
     rot_ui_sync();
 }
 
@@ -2869,7 +2871,7 @@ static void rot_ui_sync(void) {
     /* v1.3.27(F3)：自定义态 = 用户主动选了「自定义…」 || 数值落在预设之外
      * （启动加载时按数值反推）。此前纯靠数值反推，用户在自定义态敲出
      * 60/120/300 等恰好命中预设秒数时，输入框当场消失、档位跳回预设，
-     * 观感像"被重置"；现在只要用户主动进了自定义态就保持自定义显示，
+     * 观感像"was reset"；现在只要用户主动进了自定义态就保持自定义显示，
      * 输入框里的数字不动，保存值也不变（数值语义与预设完全等价）。 */
     bool custom = g_rot_custom_picked || (cur < 0 && g_app.v_rotsec > 0);
     if (cur < 0 || g_rot_custom_picked)
@@ -2884,7 +2886,7 @@ static void rot_ui_sync(void) {
      * 随机关时输入框/单位框/提示全部隐藏，只留标题就是一行孤立文字 */
     if (hRotSubLabel)
         ShowWindow(hRotSubLabel, g_app.v_random ? SW_SHOW : SW_HIDE);
-    /* 子行提示只在"随机开 + 非自定义"时出现；随机关时整行无内容可填，
+    /* 子行提示只在"random on + not custom"时出现；随机关时整行无内容可填，
      * 提示反而误导，一并隐藏 */
     if (hRotSubHint)
         ShowWindow(hRotSubHint, (!custom && g_app.v_random) ? SW_SHOW : SW_HIDE);
@@ -2892,11 +2894,11 @@ static void rot_ui_sync(void) {
     EnableWindow(g_app.hwndRotMinEdit, g_app.v_random);
     EnableWindow(g_app.hwndRotUnitBtn, g_app.v_random);
     if (custom) {
-        /* 显示单位跟随用户选择；但"分钟"只在整分钟时成立，否则自动落回
+        /* 显示单位跟随用户选择；但"Minutes"只在整分钟时成立，否则自动落回
          * 秒钟显示（例如 90 秒没法用整数分钟表达，不静默改值）。
          * v1.3.25(D1) 一致性：落回时必须回写 v_rotunit —— 输入框显示的是
          * 秒数，EN_CHANGE 与保存路径都按 v_rotunit 换算，不同步就会把
-         * "90 秒"错算成"90 分钟"。 */
+         * "90 sec"错算成"90 minutes"。 */
         if (g_app.v_rotunit == ROT_UNIT_MIN && (g_app.v_rotsec % 60) != 0)
             g_app.v_rotunit = ROT_UNIT_SEC;
         combo_state_set(&g_cb_rotunit, g_app.v_rotunit);
@@ -2930,10 +2932,9 @@ static void on_rot_menu(HWND hwnd) {
     if (ROT_SECONDS[i] < 0) {
         /* 自定义：当前值是预设/无效时给一个非预设起点（3 分钟），直进编辑。
          * v1.3.25(D1)：单位随起点重置为分钟，用户可再切秒钟。
-         * v1.3.27(F3)：标记"用户主动进了自定义态"——之后手敲的值即使
+         * v1.3.27(F3)：标记"user explicitly entered custom mode"——之后手敲的值即使
          * 恰好等于预设秒数（如 120），也保持自定义显示不跳档。
-         * v1.3.28(P3，Deepseek 复审)：重置只发生在"从预设档/无效值首次
-         * 进入自定义"时；已在自定义态（用户手敲过值）再点一次「自定义…」
+         * v1.3.28(P3，Deepseek 复审)：重置只发生在"first entry into custom from a preset/invalid\n         * value"时；已在自定义态（用户手敲过值）再点一次「自定义…」
          * 不得重置 —— 120 是用户填的数，重新选个下拉不该把它顶回 180。
          * 注意先取旧值再置位，否则 already_custom 永远为 true。 */
         bool already_custom = g_rot_custom_picked;
@@ -2955,7 +2956,7 @@ static void on_rot_menu(HWND hwnd) {
         g_app.v_rotsec = ROT_SECONDS[i];
         rot_ui_sync();
     }
-    /* v1.3.21(G2，Deepseek 审计)：选档后立即刷新"当前生效配置"摘要，
+    /* v1.3.21(G2，Deepseek 审计)：选档后立即刷新"Live configuration"摘要，
      * 不再等用户手动点「刷新摘要」 */
     update_summary();
 }
@@ -2963,8 +2964,8 @@ static void on_rot_menu(HWND hwnd) {
 /* v1.3.25(D1)：点单位下拉（分钟/秒钟）。
  * 切到秒钟：直接换显示，实际间隔秒数不变；
  * 切到分钟：整分钟（%60==0）才切，否则向上取整到分钟并记日志 ——
- *           输入框是 ES_NUMBER 整数，"90 秒"没法用分钟如实显示，
- *           与其静默跳值，不如明说"已取整到 N 分钟"。 */
+ *           输入框是 ES_NUMBER 整数，"90 sec"没法用分钟如实显示，
+ *           与其静默跳值，不如明说"rounded up to N minutes"。 */
 static void on_rotunit_menu(HWND hwnd) {
     if (!g_app.hwndRotUnitBtn || !g_app.v_random) return;
     HMENU menu = CreatePopupMenu();
@@ -2986,7 +2987,7 @@ static void on_rotunit_menu(HWND hwnd) {
         if (snapped > 86400) snapped = 86400;
         g_app.v_rotsec = snapped;
         WCHAR b[160];
-        sfmt(b, 160, L"秒钟没法用整数分钟显示，间隔已取整到 %d 分钟", snapped / 60);
+        sfmt(b, 160, L"Sub-minute seconds can't be shown in whole minutes; interval rounded to %d min", snapped / 60);
         log_info(b);
     }
     g_app.v_rotunit = pick;
@@ -3023,15 +3024,15 @@ static void build_folders_tab(HWND parent) {
     HWND left = new_card_panel(parent, pad, y, lw, h);
     HWND right = new_card_panel(parent, pad*2+lw, y, rw, h);
 
-    new_label(left, L"专属背景规则", S(12), S(10), S(100), S(18), true, C_TEXT);
+    new_label(left, L"Per-folder background rules", S(12), S(10), S(220), S(18), true, C_TEXT);
     {
-        const WCHAR *cnt = L"0 条规则";
+        const WCHAR *cnt = L"0 rules";
         int tw = text_width_f(cnt, g_app.font_ui) + S(24);
         if (tw > lw - S(160)) tw = lw - S(160);
         g_app.hwndRuleCount = new_label_ex(left, cnt, lw - S(12) - tw, S(12), tw, S(16),
                                            false, C_TEXT3, true, false);
     }
-    new_label_ex(left, L"写入 ini 中形如 [路径] img=文件名 的区块", S(12), S(30), lw-S(24), S(16),
+    new_label_ex(left, L"Writes ini sections like [path] img=filename", S(12), S(30), lw-S(24), S(16),
                  false, C_TEXT3, false, false);
     g_app.hwndRuleList = new_listview(left, ID_LV_RULES, S(12), S(52), lw-S(24), h-S(64));
     /* 两列：文件夹路径靠左、图片名靠右（设计稿 rule-item 的 rule-folder / rule-img） */
@@ -3045,34 +3046,34 @@ static void build_folders_tab(HWND parent) {
     }
 
     int ry = S(10);
-    new_label(right, L"添加 / 编辑规则", S(12), ry, rw-S(24), S(18), true, C_TEXT);
+    new_label(right, L"Add / edit rule", S(12), ry, rw-S(24), S(18), true, C_TEXT);
     ry += S(26);
-    new_label(right, L"文件夹路径", S(12), ry, S(100), S(16), false, C_TEXT);
+    new_label(right, L"Folder path", S(12), ry, S(100), S(16), false, C_TEXT);
     ry += S(20);
-    g_app.hwndRulePath = new_edit(right, ID_EDIT_RULE_PATH, L"", S(12), ry, rw-S(100), S(32), false);
-    new_btn(right, ID_BTN_RULE_ADD, L"添加/更新", rw-S(80), ry, S(68), S(32), false, false);
+    g_app.hwndRulePath = new_edit(right, ID_EDIT_RULE_PATH, L"", S(12), ry, rw-S(120), S(32), false);
+    new_btn(right, ID_BTN_RULE_ADD, L"Add/Update", rw-S(100), ry, S(88), S(32), false, false);
     ry += S(44);
-    new_label(right, L"插入 CLSID", S(12), ry, S(100), S(16), false, C_TEXT);
+    new_label(right, L"Insert CLSID", S(12), ry, S(100), S(16), false, C_TEXT);
     ry += S(20);
     /* v1.3.9：原生 COMBOBOX → 自绘下拉按钮（外观与「界面缩放」、输入框圆角统一） */
     combo_state_clear(&g_cb_clsid);
     g_app.hwndClsid = new_btn_dropdown(right, ID_CB_CLSID, L"", S(12), ry, rw-S(24), S(32));
     g_cb_clsid.btn = g_app.hwndClsid;
-    combo_state_add(&g_cb_clsid, L"— 选择特殊系统路径 —");
+    combo_state_add(&g_cb_clsid, L"— pick a special system path —");
     for (int i = 0; i < 3; i++) combo_state_add(&g_cb_clsid, BUILTIN_CLIDS[i]);
     combo_state_set(&g_cb_clsid, 0);
     ry += S(44);
-    new_label(right, L"图片文件名", S(12), ry, S(80), S(16), false, C_TEXT);
-    new_chip(right, L"Image 内", S(12) + text_width(L"图片文件名", false, false) + S(8), ry + S(1), false, 0);
+    new_label(right, L"Image file name", S(12), ry, S(110), S(16), false, C_TEXT);
+    new_chip(right, L"In Image folder", S(12) + text_width(L"Image file name", false, false) + S(8), ry + S(1), false, 0);
     ry += S(20);
     combo_state_clear(&g_cb_img);
     g_app.hwndRuleImg = new_btn_dropdown(right, ID_CB_RULE_IMG, L"", S(12), ry, rw-S(24), S(32));
     g_cb_img.btn = g_app.hwndRuleImg;
     ry += S(44);
-    new_btn(right, ID_BTN_RULE_DEL, L"删除选中", S(12), ry, S(70), S(32), false, true);
-    new_btn(right, ID_BTN_RULE_REFRESH, L"刷新列表", S(90), ry, S(70), S(32), false, false);
+    new_btn(right, ID_BTN_RULE_DEL, L"Delete selected", S(12), ry, S(100), S(32), false, true);
+    new_btn(right, ID_BTN_RULE_REFRESH, L"Refresh list", S(122), ry, S(86), S(32), false, false);
     ry += S(44);
-    new_label(right, L"选择左侧规则可自动填充表单；「添加/更新」会写入或覆盖对应路径的规则。",
+    new_label(right, L"Select a rule on the left to autofill; Add/Update overwrites it.",
               S(12), ry, rw-S(24), S(32), false, C_TEXT3);
 }
 
@@ -3099,17 +3100,17 @@ static void build_ui(HWND hwnd) {
     const int y_panel  = y_tab + tab_h;
 
     HWND tool = new_panel(hwnd, 0, 0, w, tool_h, PANEL_BG_WHITE);
-    new_label(tool, L"插件目录", S(16), S(8), S(120), S(16), false, C_TEXT2);
+    new_label(tool, L"Plugin folder", S(16), S(8), S(120), S(16), false, C_TEXT2);
     /* 输入框 + 按钮统一 32px 高（v1.3.3），垂直方向在 64px 工具栏里居中偏下 */
     /* v1.3.5：输入框宽度修正——旧值 w-S(236) 的右缘(w-220)越过浏览按钮起点
-       (w-228) 8px，两者真重叠（用户标注"混在一起、没有边界感"的根因）。
+       (w-228) 8px，两者真重叠（用户标注"blended together, no clear boundary"的根因）。
        现在：输入框右缘 w-236，与浏览按钮间隔 8px（设计稿 .fld-row gap:8px） */
-    g_app.hwndPluginDir = new_edit(tool, ID_EDIT_PLUGIN_DIR, g_app.plugin_dir, S(16), S(26), w-S(252), S(32), false);
-    new_btn(tool, ID_BTN_BROWSE_DIR, L"浏览...", w-S(228), S(26), S(60), S(32), false, false);
-    new_btn(tool, ID_BTN_LOCATE, L"定位", w-S(160), S(26), S(48), S(32), false, false);
+    g_app.hwndPluginDir = new_edit(tool, ID_EDIT_PLUGIN_DIR, g_app.plugin_dir, S(16), S(26), w-S(264), S(32), false);
+    new_btn(tool, ID_BTN_BROWSE_DIR, L"Browse...", w-S(240), S(26), S(68), S(32), false, false);
+    new_btn(tool, ID_BTN_LOCATE, L"Reveal", w-S(160), S(26), S(48), S(32), false, false);
     /* 界面缩放：v1.3.4 改自绘下拉按钮 + TrackPopupMenu（原生 COMBOBOX 箭头不居中、
        外观突兀，用户点名要求替换）。右缘距窗口 16px；标签右对齐到按钮右缘 */
-    new_label_ex(tool, L"界面缩放", w - S(16) - S(88), S(8), S(88), S(16), false, C_TEXT2, true, false);
+    new_label_ex(tool, L"UI scaling", w - S(16) - S(88), S(8), S(88), S(16), false, C_TEXT2, true, false);
     g_app.hwndScaleBtn = new_btn_dropdown(tool, ID_CB_SCALE, SCALE_CHOICES[g_app.scale_idx + 1],
                                           w - S(16) - S(88), S(26), S(88), S(32));
 
@@ -3122,7 +3123,7 @@ static void build_ui(HWND hwnd) {
        系统 3D 边框由系统绘制、owner-draw 只接管内容区，边框去不掉（绿框标注）。
        设计稿 .tabs padding 0 16px gap 2px；.tab padding 11px 16px 按文字自适应宽 */
     {
-        const WCHAR *tab_names[3] = { L"基础配置", L"图片管理", L"文件夹专属背景" };
+        const WCHAR *tab_names[3] = { L"Basic config", L"Image manager", L"Per-folder background" };
         int tx = S(16);
         for (int i = 0; i < 3; i++) {
             int tw = text_width_f(tab_names[i], g_app.font_bold) + S(32);
@@ -3168,13 +3169,13 @@ static void build_ui(HWND hwnd) {
     HWND bot = new_panel(hwnd, 0, bot_y, w, bot_h, PANEL_BG_WHITE);
     {
         const struct { int id; const WCHAR *txt; int sty; } bb[] = {
-            { ID_BTN_SAVE,     L"保存配置",      3 },   /* primary + ✓ */
-            { ID_BTN_REG,      L"注册(提权)",    0 },
-            { ID_BTN_UNREG,    L"注销(提权)",    0 },
-            { ID_BTN_RESTART,  L"重启资源管理器", 0 },
-            { ID_BTN_REFRESH,  L"刷新状态",      0 },
-            { ID_BTN_BACKUP,   L"备份配置",      0 },
-            { ID_BTN_RESTORE,  L"恢复配置",      0 },
+            { ID_BTN_SAVE,     L"Save config",      3 },   /* primary + ✓ */
+            { ID_BTN_REG,      L"Register (admin)",    0 },
+            { ID_BTN_UNREG,    L"Unregister (admin)",    0 },
+            { ID_BTN_RESTART,  L"Restart Explorer", 0 },
+            { ID_BTN_REFRESH,  L"Refresh status",      0 },
+            { ID_BTN_BACKUP,   L"Back up config",      0 },
+            { ID_BTN_RESTORE,  L"Restore config",      0 },
         };
         const int n = 7;
         int byy = (bot_h - S(32)) / 2;
@@ -3206,12 +3207,12 @@ static void build_ui(HWND hwnd) {
     HWND logPanel = new_card_panel(hwnd, S(16), log_panel_y, lpw, log_panel_h);
     HWND logHead = new_panel(logPanel, 1, 1, lpw - 2, log_head_h, PANEL_BG_LOGHEAD);
     {
-        HWND logTitle = CreateWindowW(L"STATIC", L"运行日志",
+        HWND logTitle = CreateWindowW(L"STATIC", L"Run log",
                                       WS_CHILD | WS_VISIBLE | SS_LEFT,
                                       S(12), 0, S(120), log_head_h, logHead, NULL, NULL, NULL);
         if (g_app.font_bold) SendMessageW(logTitle, WM_SETFONT, (WPARAM)g_app.font_bold, 0);
         SetWindowLongPtrW(logTitle, GWLP_USERDATA, (LONG_PTR)C_LOG_HEAD_TXT);
-        new_mini_btn(logHead, ID_BTN_LOG_CLEAR, L"清空",
+        new_mini_btn(logHead, ID_BTN_LOG_CLEAR, L"Clear",
                      lpw - 2 - S(12) - S(44), (log_head_h - S(20)) / 2, S(44), S(20));
     }
     g_app.hwndLog = CreateWindowW(L"LISTBOX", L"",
@@ -3306,7 +3307,7 @@ static void draw_owner_button(HWND hwnd, HDC dc, bool hover, bool pushed) {
         int idx = (int)((style >> 4) & 0xF);
         seg_on = (idx == g_app.v_posType);
         /* v1.3.10（用户蓝框）：选中段整钮着色——之前只有文字变蓝，用户要求
-           像"应急禁用"按钮一样按下时整个按钮有颜色：选中段改蓝底白字
+           像"emergency off"按钮一样按下时整个按钮有颜色：选中段改蓝底白字
            （实机反馈优先于设计稿的白底蓝字）。未选中段保持白底灰边 */
         bg = seg_on ? C_ACCENT : C_PANEL;
         fg = seg_on ? C_PANEL : C_TEXT2;
@@ -3410,30 +3411,30 @@ static void paint_status(HDC dc) {
 
     /* 1) 注册状态 */
     bool ok = g_app.registered;
-    sfmt(buf, 512, L"DLL %s", ok ? L"已注册" : L"未注册");
+    sfmt(buf, 512, L"DLL %s", ok ? L"registered" : L"not registered");
     x += draw_pill(dc, x, y, ph,
                    ok ? C_OK_SOFT : C_WARN_SOFT, ok ? C_OK_LINE : C_WARN_LINE,
                    ok ? C_OK : C_WARN, ok ? C_OK_LINE : C_WARN_LINE,
                    buf, ok ? C_OK : C_WARN) + pt_scaled(8);
 
     /* 2) DLL 文件 */
-    sfmt(buf, 512, L"DLL %s v%S", g_app.dll_exists ? L"存在" : L"缺失", DLL_VERSION);
+    sfmt(buf, 512, L"DLL %s v%S", g_app.dll_exists ? L"exists" : L"missing", DLL_VERSION);
     x += draw_pill(dc, x, y, ph, C_PANEL, C_BORDER,
                    g_app.dll_exists ? C_DOT_IDLE : C_WARN,
                    g_app.dll_exists ? C_BORDER : C_WARN_LINE,
                    buf, g_app.dll_exists ? C_TEXT2 : C_WARN) + pt_scaled(8);
 
     /* 3) 图片张数（走缓存，避免每次重绘都扫盘） */
-    sfmt(buf, 512, L"图片 %d 张", count_images_current());
+    sfmt(buf, 512, L"%d images", count_images_current());
     x += draw_pill(dc, x, y, ph, C_PANEL, C_BORDER, C_DOT_IDLE, C_BORDER, buf, C_TEXT2)
          + pt_scaled(10);
 
     /* v1.3.18：移除原来的第 4 个胶囊「已提权/未提权」。
      * 它显示的是外壳进程自身的管理员状态，静态不变、与注册状态无关，
-     * 放在"DLL 未注册"旁边极易让人误读成注册/提权出了问题，已删除。 */
+     * 放在"DLL not registered"旁边极易让人误读成注册/提权出了问题，已删除。 */
 
     /* 右侧 ini 路径（设计稿 .status-path） */
-    sfmt(buf, 512, L"config.ini：%s", g_app.ini_path);
+    sfmt(buf, 512, L"config.ini: %s", g_app.ini_path);
     RECT tr = { x, y, rc.right - pt_scaled(16), y + ph };
     if (tr.right > tr.left)
         draw_text_dc(dc, buf, &tr, C_TEXT3, false, g_app.font_ui);
@@ -3489,46 +3490,46 @@ static void update_summary(void) {
     sfmt(g_app.last_refresh_time, 32, L"%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
     if (g_app.hwndSumTime) {
         WCHAR tbuf[64];
-        sfmt(tbuf, 64, L"本次刷新：%s", g_app.last_refresh_time);
+        sfmt(tbuf, 64, L"Last refresh: %s", g_app.last_refresh_time);
         SetWindowTextW(g_app.hwndSumTime, tbuf);
     }
 
     WCHAR buf[1024];
     /* folderExt */
-    sfmt(buf, 1024, L"%s", g_app.v_folderExt ? L"✓ 启用" : L"✗ 关闭");
+    sfmt(buf, 1024, L"%s", g_app.v_folderExt ? L"✓ Enabled" : L"✗ Off");
     set_sum(0, buf, g_app.v_folderExt ? C_OK : C_SUM_OFF);
     /* noerror */
-    sfmt(buf, 1024, L"%s", g_app.v_noerror ? L"✓ 启用" : L"✗ 关闭");
+    sfmt(buf, 1024, L"%s", g_app.v_noerror ? L"✓ Enabled" : L"✗ Off");
     set_sum(1, buf, g_app.v_noerror ? C_OK : C_SUM_OFF);
     /* random */
-    sfmt(buf, 1024, L"%s", g_app.v_random ? L"✓ 启用" : L"✗ 关闭");
+    sfmt(buf, 1024, L"%s", g_app.v_random ? L"✓ Enabled" : L"✗ Off");
     set_sum(2, buf, g_app.v_random ? C_OK : C_SUM_OFF);
     /* custom */
-    sfmt(buf, 1024, L"%s", g_app.v_custom ? L"✓ 启用" : L"✗ 关闭");
+    sfmt(buf, 1024, L"%s", g_app.v_custom ? L"✓ Enabled" : L"✗ Off");
     set_sum(3, buf, g_app.v_custom ? C_OK : C_SUM_OFF);
     /* posType */
     sfmt(buf, 1024, L"%d · %s", g_app.v_posType, POS_NAMES[g_app.v_posType]);
     set_sum(4, buf, C_ACCENT);
     /* alpha */
-    sfmt(buf, 1024, L"%d / 255（%d%%）", g_app.v_alpha, (int)round(g_app.v_alpha * 100.0 / 255.0));
+    sfmt(buf, 1024, L"%d / 255(%d%%)", g_app.v_alpha, (int)round(g_app.v_alpha * 100.0 / 255.0));
     set_sum(5, buf, C_ACCENT);
     /* folder */
     if (g_app.v_folder[0]) set_sum(6, g_app.v_folder, C_TEXT);
-    else set_sum(6, L"未设置 → 用插件目录/Image", C_SUM_OFF);
+    else set_sum(6, L"not set → using plugin folder/Image", C_SUM_OFF);
     /* imgcount */
     int n = count_images_current();
     bool warn_img = (n == 0) || (n < 2 && g_app.v_random);
-    sfmt(buf, 1024, L"%d 张%s", n,
-         (n == 0) ? L" ⚠ 无图" :
-         (n < 2 && g_app.v_random) ? L" ⚠ 需≥2" : L"");
+    sfmt(buf, 1024, L"%d images%s", n,
+         (n == 0) ? L" ⚠ no images" :
+         (n < 2 && g_app.v_random) ? L" ⚠ need ≥2" : L"");
     set_sum(7, buf, warn_img ? C_WARN : C_ACCENT);
     /* dllstatus */
     if (!g_app.dll_exists) {
-        set_sum(8, L"✗ DLL 文件缺失", C_DANGER);
+        set_sum(8, L"✗ DLL file missing", C_DANGER);
     } else {
         int64_t sz = file_size(g_app.dll_path);
         sfmt(buf, 1024, L"%s v%S  (%lld KB)",
-             g_app.registered ? L"✓ 已注册" : L"⚠ 未注册",
+             g_app.registered ? L"✓ registered" : L"⚠ not registered",
              DLL_VERSION, sz > 0 ? sz/1024 : 0);
         set_sum(8, buf, g_app.registered ? C_OK : C_WARN);
     }
@@ -3547,7 +3548,7 @@ static void refresh_image_list(void) {
     /* 计数标签（张数） */
     if (g_app.hwndImgCount) {
         WCHAR cb[80];
-        sfmt(cb, 80, L"%d 张 · png/jpg/bmp 最稳", n);
+        sfmt(cb, 80, L"%d images · png/jpg/bmp recommended", n);
         SetWindowTextW(g_app.hwndImgCount, cb);
     }
     if (!imgs) return;
@@ -3563,19 +3564,23 @@ static void refresh_image_list(void) {
         ListView_SetItemText(g_app.hwndImgList, pos, 1, szbuf);
     }
     free(imgs);
-    /* 智能列宽（人类开发者 2026-11-04）：名称列按最长文件名自适应——
-     * 短名时大小列左移完整显示（无横向滚动条）；名称超长时名称列封顶为
-     * 可用宽度、横向滚动条接管。旧固定列宽未计入垂直滚动条占用的客户宽，
-     * 146 张图时大小列被右缘裁掉（11.1 MB 只剩 11.1 ME）。 */
+
+    /* Smart column widths (human developer, 2026-11-04): the name column
+     * auto-fits the longest file name -- short names keep the size column
+     * fully visible with no horizontal scrollbar; overlong names cap the
+     * name column and the horizontal scrollbar takes over. The old fixed
+     * widths ignored the client width eaten by the vertical scrollbar, so
+     * with ~146 images the size column was clipped at the right edge
+     * (11.1 MB rendered as 11.1 ME). */
     {
         RECT lrc; GetClientRect(g_app.hwndImgList, &lrc);
         int clientw = lrc.right - lrc.left;
-        /* 大小列：自适应内容（"11.1 MB" 等），保底 60px */
+        /* Size column: fit contents ("11.1 MB" etc.), floor 60px */
         SendMessageW(g_app.hwndImgList, LVM_SETCOLUMNWIDTH, 1, LVSCW_AUTOSIZE);
         int sizew = (int)SendMessageW(g_app.hwndImgList, LVM_GETCOLUMNWIDTH, 1, 0);
         if (sizew < pt_scaled(60)) sizew = pt_scaled(60);
         SendMessageW(g_app.hwndImgList, LVM_SETCOLUMNWIDTH, 1, sizew);
-        /* 名称列：自适应最长项，封顶为剩余宽度 */
+        /* Name column: fit longest item, cap at remaining width */
         SendMessageW(g_app.hwndImgList, LVM_SETCOLUMNWIDTH, 0, LVSCW_AUTOSIZE);
         int namew = (int)SendMessageW(g_app.hwndImgList, LVM_GETCOLUMNWIDTH, 0, 0);
         int avail = clientw - sizew - pt_scaled(8);
@@ -3609,7 +3614,7 @@ static void refresh_rule_list(void) {
     /* 计数标签（规则条数） */
     if (g_app.hwndRuleCount) {
         WCHAR cb[64];
-        sfmt(cb, 64, L"%d 条规则", secs ? n : 0);
+        sfmt(cb, 64, L"%d rules", secs ? n : 0);
         SetWindowTextW(g_app.hwndRuleCount, cb);
     }
     if (!secs) return;
@@ -3654,10 +3659,10 @@ static void browse_plugin(const WCHAR *dir) {
     detect_registered();
 
     WCHAR lines[2048];
-    sfmt(lines, 2048, L"DLL: %s  (%s)\r\nconfig.ini: %s\r\n已注册: %s",
-         g_app.dll_exists ? L"存在" : L"缺失!", g_app.dll_path,
-         g_app.ini_exists ? L"存在" : L"缺失!",
-         g_app.registered ? L"是" : L"否");
+    sfmt(lines, 2048, L"DLL: %s  (%s)\r\nconfig.ini: %s\r\nRegistered: %s",
+         g_app.dll_exists ? L"exists" : L"missing!", g_app.dll_path,
+         g_app.ini_exists ? L"exists" : L"missing!",
+         g_app.registered ? L"Yes" : L"No");
     log_info(lines);
     for (int i = 0; i < 4; i++) log_info(g_app.reg_detail[i]);
 
@@ -3666,7 +3671,7 @@ static void browse_plugin(const WCHAR *dir) {
         for (int i = 0; i < g_app.reg_dll_path_count; i++) {
             WCHAR reg[MAX_PATH_W]; GetFullPathNameW(g_app.reg_dll_paths[i], MAX_PATH_W, reg, NULL);
             if (_wcsicmp(cur, reg) != 0) {
-                log_warn(L"注册表指向的 DLL 与当前插件不一致，可能存在旧版本 BHO 冲突。");
+                log_warn(L"The DLL registered in the registry differs from the one in the current plugin folder; an older BHO may conflict.");
             }
         }
     }
@@ -3723,7 +3728,7 @@ static void load_config(void) {
         /* v1.3.28(P1，Deepseek 复审)：配置重新读入（含底部「恢复配置」
          * 从 .bak 恢复的路径）后，自定义态标志必须归零 —— 恢复出预设档
          * （如 randomVal=60）时 rot_ui_sync 若仍认为 custom，界面会错误
-         * 停在"自定义…"档。该标志只表达"本次会话内用户主动选过自定义"，
+         * 停在"Custom…"档。该标志只表达"user explicitly picked custom this session"，
          * 配置一变即失效；桌面「恢复原配置」走 on_restore_prev 不经
          * load_config，不受本行影响（其本来就不动轮换配置）。 */
         g_rot_custom_picked = false;
@@ -3733,7 +3738,7 @@ static void load_config(void) {
     ini_get_buf("image", "posType", "3", tmp, sizeof(tmp));
     g_app.v_posType = atoi(tmp);
     if (g_app.v_posType < 0 || g_app.v_posType > 6) {
-        log_warn(L"posType 越界，已回退到 3（右下角）");
+        log_warn(L"posType out of range, fell back to 3 (bottom-right)");
         g_app.v_posType = 3;
     }
     ini_get_buf("image", "imgAlpha", "70", tmp, sizeof(tmp));
@@ -3753,21 +3758,25 @@ static void load_config(void) {
     invalidate_img_count();
     refresh_image_list();
     refresh_rule_img_options();
+    /* P4-1（Deepseek V4.1 Flash 1017 复核）：首次进专属背景页显示 0 rules 的根因 ——
+     * 启动顺序 browse_plugin(内含 refresh_rule_list) 在 load_config 之前，
+     * 首刷时 ini 还没载入。此处补一次刷新，与 refresh_image_list 同理。 */
+    refresh_rule_list();
     update_summary();
 }
 
 static void save_config(void) {
     if (!g_app.ini_exists) {
-        log_err(L"未找到 config.ini，请先确认插件目录正确。");
-        MessageBoxW(g_app.hwndMain, L"未找到 config.ini，请先确认插件目录正确。", L"错误", MB_OK | MB_ICONERROR);
+        log_err(L"config.ini not found. Please verify the plugin folder first.");
+        MessageBoxW(g_app.hwndMain, L"config.ini not found. Please verify the plugin folder first.", L"Error", MB_OK | MB_ICONERROR);
         return;
     }
     if (g_app.v_folder[0] && !dir_exists(g_app.v_folder)) {
         ensure_dir(g_app.v_folder);
-        log_info(L"自定义图片目录不存在，已自动创建");
+        log_info(L"Custom image folder did not exist; created automatically");
     }
     if (g_app.v_posType < 0 || g_app.v_posType > 6) {
-        log_warn(L"posType 越界，已回退到 3（右下角）");
+        log_warn(L"posType out of range, fell back to 3 (bottom-right)");
         g_app.v_posType = 3;
     }
     ini_set("load", "folderExt", g_app.v_folderExt ? "ture" : "false");
@@ -3813,15 +3822,15 @@ static void save_config(void) {
     wtou8(g_app.v_folder, folbuf, sizeof(folbuf));
     ini_set("image", "folder", folbuf);
     if (!ini_commit()) {
-        /* v1.3.12：只读/被占用/磁盘满时不再假报"已保存" */
+        /* v1.3.12：只读/被占用/磁盘满时不再假报"saved" */
         WCHAR b[512];
-        sfmt(b, 512, L"保存失败：无法写入 config.ini（错误码 %lu）。\n文件可能被设为只读或被其他程序占用。", GetLastError());
+        sfmt(b, 512, L"Save failed: cannot write config.ini (error %lu).\nThe file may be read-only or locked by another program.", GetLastError());
         log_err(b);
-        MessageBoxW(g_app.hwndMain, b, L"保存失败", MB_OK | MB_ICONERROR);
+        MessageBoxW(g_app.hwndMain, b, L"Save failed", MB_OK | MB_ICONERROR);
         return;
     }
-    log_info(L"配置已保存到 config.ini");
-    MessageBoxW(g_app.hwndMain, L"配置已保存到 config.ini。\n如需生效，请点『重启资源管理器』。", L"完成", MB_OK | MB_ICONINFORMATION);
+    log_info(L"Configuration saved to config.ini");
+    MessageBoxW(g_app.hwndMain, L"Configuration saved to config.ini.\nClick Restart Explorer to apply.", L"Done", MB_OK | MB_ICONINFORMATION);
 }
 
 /* ------------------------------------------------------------------ */
@@ -3837,7 +3846,7 @@ static bool shell_exec_runas(const WCHAR *exe, const WCHAR *params, bool wait, D
     if (code) *code = 0xFFFFFFFF;
     if (!ShellExecuteExW(&sei)) return false;
     /* 需要等退出码却拿不到进程句柄时不能报成功：
-       否则上层会把 code=0 当成"注册成功"（v1.3.1 修复） */
+       否则上层会把 code=0 当成"registered OK"（v1.3.1 修复） */
     if (!sei.hProcess) return !wait ? true : false;
     bool ok = true;
     if (wait) {
@@ -3877,42 +3886,42 @@ static void startup_verify(void) {
         if (data && sz) {
             g_app.embedded_hash_ok = sha256_mem(data, sz, g_app.embedded_hash);
             if (!g_app.embedded_hash_ok)
-                log_warn(L"启动校验：无法计算内置 DLL 摘要（加密 API 不可用），注册前比对已跳过");
+                log_warn(L"Startup check: cannot hash the embedded DLL (crypto API unavailable); pre-register comparison skipped");
         } else {
-            log_warn(L"启动校验：EXE 内未找到内置 DLL 资源，注册前比对已跳过");
+            log_warn(L"Startup check: embedded DLL resource not found in the EXE; pre-register comparison skipped");
         }
     }
     /* 2) plugin 目录 DLL 与内置比对 */
     if (!g_app.dll_exists) {
-        log_warn(L"启动校验：plugin 目录里没有 ExplorerBgTool.dll，注册/注销不可用");
+        log_warn(L"Startup check: no ExplorerBgTool.dll in the plugin folder; register/unregister unavailable");
     } else {
         char hex[65];
         if (sha256_file(g_app.dll_path, hex)) {
             WCHAR hw[80], b[256];
             u8tow(hex, hw, 80);
-            sfmt(b, 256, L"启动校验：DLL SHA256 %s", hw);
+            sfmt(b, 256, L"Startup check: DLL SHA256 %s", hw);
             log_info(b);
             if (g_app.embedded_hash_ok && strcmp(hex, g_app.embedded_hash) != 0) {
-                log_warn(L"启动校验：plugin 目录的 DLL 与程序内置 DLL 不一致（可能被手动替换），注册前请确认");
+                log_warn(L"Startup check: the plugin folder DLL differs from the embedded DLL (maybe hand-swapped); confirm before registering");
                 MessageBoxW(g_app.hwndMain,
-                    L"plugin 目录里的 ExplorerBgTool.dll 与程序内置的 DLL 不一致（可能被手动替换过）。\n\n"
-                    L"注册前请确认这是你预期的 DLL；如需还原，删除 plugin 目录里的 DLL 后重启本程序即可重新解包。",
-                    L"DLL 不一致", MB_OK | MB_ICONWARNING);
+                    L"The ExplorerBgTool.dll in the plugin folder differs from the embedded DLL (maybe hand-swapped).\n\n"
+                    L"Confirm this is the DLL you expect before registering. To restore: delete the DLL in the plugin folder and restart this program to re-unpack.",
+                    L"DLL mismatch", MB_OK | MB_ICONWARNING);
             }
         } else {
-            log_warn(L"启动校验：无法计算 DLL 摘要（文件被占用或加密 API 不可用）");
+            log_warn(L"Startup check: cannot hash the DLL (file locked or crypto API unavailable)");
         }
     }
     if (!g_app.ini_exists)
-        log_warn(L"启动校验：config.ini 缺失，保存配置前请先确认插件目录");
+        log_warn(L"Startup check: config.ini missing; verify the plugin folder before saving");
 }
 
 static void clear_busy(void) {
     g_app.busy = false;
     if (g_app.hwndMain) KillTimer(g_app.hwndMain, TIMER_BUSY_WATCHDOG);
-    SetWindowTextW(g_app.hwndBtnReg, L"注册(提权)");
-    SetWindowTextW(g_app.hwndBtnUnreg, L"注销(提权)");
-    SetWindowTextW(g_app.hwndBtnRestart, L"重启资源管理器");
+    SetWindowTextW(g_app.hwndBtnReg, L"Register (admin)");
+    SetWindowTextW(g_app.hwndBtnUnreg, L"Unregister (admin)");
+    SetWindowTextW(g_app.hwndBtnRestart, L"Restart Explorer");
     EnableWindow(g_app.hwndBtnReg, TRUE);
     EnableWindow(g_app.hwndBtnUnreg, TRUE);
     EnableWindow(g_app.hwndBtnRestart, TRUE);
@@ -3923,9 +3932,9 @@ static void start_busy(const WCHAR *which) {
     EnableWindow(g_app.hwndBtnReg, FALSE);
     EnableWindow(g_app.hwndBtnUnreg, FALSE);
     EnableWindow(g_app.hwndBtnRestart, FALSE);
-    if (wcscmp(which, L"reg") == 0) SetWindowTextW(g_app.hwndBtnReg, L"注册…");
-    else if (wcscmp(which, L"unreg") == 0) SetWindowTextW(g_app.hwndBtnUnreg, L"注销…");
-    else SetWindowTextW(g_app.hwndBtnRestart, L"重启中…");
+    if (wcscmp(which, L"reg") == 0) SetWindowTextW(g_app.hwndBtnReg, L"Registering…");
+    else if (wcscmp(which, L"unreg") == 0) SetWindowTextW(g_app.hwndBtnUnreg, L"Unregistering…");
+    else SetWindowTextW(g_app.hwndBtnRestart, L"Restarting…");
     if (g_app.hwndMain) SetTimer(g_app.hwndMain, TIMER_BUSY_WATCHDOG, BUSY_TIMEOUT_MS, NULL);
 }
 
@@ -3983,43 +3992,43 @@ static bool check_dll_integrity_before_register(void) {
     if (strcmp(hex, g_app.embedded_hash) == 0) return true;
     WCHAR b[1024];
     sfmt(b, 1024,
-         L"plugin 目录里的 ExplorerBgTool.dll 与本程序内置的 DLL 不一致（可能被手动替换过）。\n\n"
-         L"DLL 路径：\n%s\n\n"
-         L"替换过的 DLL 可能行为异常或有安全风险。仍要继续注册吗？",
+         L"The ExplorerBgTool.dll in the plugin folder differs from the DLL embedded in this program (maybe hand-swapped).\n\n"
+         L"DLL path:\n%s\n\n"
+         L"A swapped DLL may misbehave or pose security risks. Continue registering anyway?",
          g_app.dll_path);
-    if (MessageBoxW(g_app.hwndMain, b, L"DLL 完整性确认", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) {
-        log_warn(L"注册已取消：DLL 与内置版本不一致，用户选择中止");
+    if (MessageBoxW(g_app.hwndMain, b, L"DLL integrity check", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) {
+        log_warn(L"Registration cancelled: DLL differs from the embedded version; user aborted");
         return false;
     }
-    log_warn(L"注册继续：DLL 与内置版本不一致，用户确认继续");
+    log_warn(L"Registration continued: DLL differs from the embedded version; user confirmed");
     return true;
 }
 
 static void on_register(void) {
     if (g_app.busy) return;
-    if (!g_app.dll_exists) { MessageBoxW(g_app.hwndMain, L"找不到 DLL", L"错误", MB_OK|MB_ICONERROR); return; }
+    if (!g_app.dll_exists) { MessageBoxW(g_app.hwndMain, L"DLL not found", L"Error", MB_OK|MB_ICONERROR); return; }
     if (!check_dll_integrity_before_register()) return;
     start_busy(L"reg");
-    log_info(L"正在提权注册（直调 regsvr32.exe）…");
-    if (!start_thread(thread_register)) { clear_busy(); log_err(L"创建注册线程失败"); }
+    log_info(L"Registering with elevation (calling regsvr32.exe directly)…");
+    if (!start_thread(thread_register)) { clear_busy(); log_err(L"Failed to create the registration thread"); }
 }
 
 static void on_unregister(void) {
     if (g_app.busy) return;
-    if (!g_app.dll_exists) { MessageBoxW(g_app.hwndMain, L"找不到 DLL", L"错误", MB_OK|MB_ICONERROR); return; }
+    if (!g_app.dll_exists) { MessageBoxW(g_app.hwndMain, L"DLL not found", L"Error", MB_OK|MB_ICONERROR); return; }
     start_busy(L"unreg");
-    log_info(L"正在提权注销（直调 regsvr32.exe）…");
-    if (!start_thread(thread_unregister)) { clear_busy(); log_err(L"创建注销线程失败"); }
+    log_info(L"Unregistering with elevation (calling regsvr32.exe directly)…");
+    if (!start_thread(thread_unregister)) { clear_busy(); log_err(L"Failed to create the unregistration thread"); }
 }
 
 static void on_restart(void) {
     if (g_app.busy) return;
     if (MessageBoxW(g_app.hwndMain,
-        L"重启资源管理器会关闭所有已打开的文件夹窗口，\n可能丢失未保存的窗口布局。\n\n确定要继续吗？",
-        L"确认重启", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) return;
+        L"Restarting Explorer closes all open folder windows\nand may lose unsaved window layout.\n\nContinue?",
+        L"Confirm restart", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) return;
     start_busy(L"restart");
-    log_info(L"正在结束 explorer.exe 并重新启动…");
-    if (!start_thread(thread_restart)) { clear_busy(); log_err(L"创建重启线程失败"); }
+    log_info(L"Ending explorer.exe and starting it again…");
+    if (!start_thread(thread_restart)) { clear_busy(); log_err(L"Failed to create the restart thread"); }
 }
 
 /* 定位：读取编辑框当前文本，而不是用旧的全局目录 */
@@ -4027,40 +4036,40 @@ static void on_locate(void) {
     WCHAR path[MAX_PATH_W];
     GetWindowTextW(g_app.hwndPluginDir, path, MAX_PATH_W);
     if (!path[0]) {
-        MessageBoxW(g_app.hwndMain, L"请先填写插件目录路径", L"提示", MB_OK);
+        MessageBoxW(g_app.hwndMain, L"Enter the plugin folder path first", L"Notice", MB_OK);
         return;
     }
     if (!dir_exists(path)) {
-        MessageBoxW(g_app.hwndMain, L"该目录不存在，请检查路径", L"提示", MB_OK | MB_ICONWARNING);
+        MessageBoxW(g_app.hwndMain, L"That folder does not exist; check the path", L"Notice", MB_OK | MB_ICONWARNING);
         return;
     }
     WCHAR buf[1024];
-    sfmt(buf, 1024, L"定位到：%s", path);
+    sfmt(buf, 1024, L"Revealed: %s", path);
     log_info(buf);
     browse_plugin(path);
 }
 
 static void on_backup(void) {
-    if (!g_app.ini_exists) { MessageBoxW(g_app.hwndMain, L"未找到 config.ini", L"错误", MB_OK|MB_ICONERROR); return; }
+    if (!g_app.ini_exists) { MessageBoxW(g_app.hwndMain, L"config.ini not found", L"Error", MB_OK|MB_ICONERROR); return; }
     SYSTEMTIME st; GetLocalTime(&st);
     WCHAR dst[MAX_PATH_W];
     sfmt(dst, MAX_PATH_W, L"%s.bak%04d%02d%02d-%02d%02d%02d",
          g_app.ini_path, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
     if (CopyFileW(g_app.ini_path, dst, FALSE)) {
-        WCHAR b[1024]; sfmt(b, 1024, L"配置已备份：%s", dst);
+        WCHAR b[1024]; sfmt(b, 1024, L"Config backed up: %s", dst);
         log_info(b);
-        MessageBoxW(g_app.hwndMain, L"配置已备份", L"完成", MB_OK|MB_ICONINFORMATION);
+        MessageBoxW(g_app.hwndMain, L"Config backed up", L"Done", MB_OK|MB_ICONINFORMATION);
     } else {
-        WCHAR b[256]; sfmt(b, 256, L"备份失败（错误码 %lu）", GetLastError());
+        WCHAR b[256]; sfmt(b, 256, L"Backup failed (error %lu)", GetLastError());
         log_err(b);
-        MessageBoxW(g_app.hwndMain, b, L"失败", MB_OK|MB_ICONERROR);
+        MessageBoxW(g_app.hwndMain, b, L"Failed", MB_OK|MB_ICONERROR);
     }
 }
 
 static void on_restore(void) {
     WCHAR pat[MAX_PATH_W]; sfmt(pat, MAX_PATH_W, L"%s.bak*", g_app.ini_path);
     WIN32_FIND_DATAW fd; HANDLE h = FindFirstFileW(pat, &fd);
-    if (h == INVALID_HANDLE_VALUE) { MessageBoxW(g_app.hwndMain, L"没有找到备份", L"提示", MB_OK); return; }
+    if (h == INVALID_HANDLE_VALUE) { MessageBoxW(g_app.hwndMain, L"No backup found", L"Notice", MB_OK); return; }
     WCHAR latest[MAX_PATH_W]; path_join(latest, MAX_PATH_W, g_app.plugin_dir, fd.cFileName);
     FILETIME ft = fd.ftLastWriteTime;
     while (FindNextFileW(h, &fd)) {
@@ -4072,24 +4081,24 @@ static void on_restore(void) {
     FindClose(h);
     if (CopyFileW(latest, g_app.ini_path, FALSE)) {
         load_config();
-        WCHAR b[1024]; sfmt(b, 1024, L"配置已恢复：%s", latest);
+        WCHAR b[1024]; sfmt(b, 1024, L"Config restored: %s", latest);
         log_info(b);
     } else {
-        WCHAR b[256]; sfmt(b, 256, L"恢复失败（错误码 %lu）", GetLastError());
+        WCHAR b[256]; sfmt(b, 256, L"Restore failed (error %lu)", GetLastError());
         log_err(b);
-        MessageBoxW(g_app.hwndMain, b, L"失败", MB_OK|MB_ICONERROR);
+        MessageBoxW(g_app.hwndMain, b, L"Failed", MB_OK|MB_ICONERROR);
     }
 }
 
 static void on_emergency(void) {
     if (g_app.emergency_backup_valid) {
-        MessageBoxW(g_app.hwndMain, L"当前已是应急禁用状态", L"提示", MB_OK);
+        MessageBoxW(g_app.hwndMain, L"Already in emergency-off state", L"Notice", MB_OK);
         return;
     }
     if (MessageBoxW(g_app.hwndMain,
-        L"应急禁用会把 folder/random/custom/noerror 临时改成关闭状态，\n"
-        L"确定继续吗？",
-        L"确认应急禁用", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) return;
+        L"Emergency off temporarily switches folder/random/custom/noerror off,\n"
+        L"Continue?",
+        L"Confirm emergency off", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) return;
     g_app.emergency_backup_valid = true;
     wcsncpy(g_app.emergency_folder, g_app.v_folder, MAX_PATH_W-1);
     g_app.emergency_random = g_app.v_random;
@@ -4105,12 +4114,12 @@ static void on_emergency(void) {
     invalidate_img_count();
     update_summary();
     refresh_image_list();
-    log_info(L"已保存禁用配置，请点「重启资源管理器」让 DLL 重新加载");
+    log_info(L"Disabled config saved; click Restart Explorer to reload the DLL");
 }
 
 static void on_restore_prev(void) {
     if (!g_app.emergency_backup_valid) {
-        MessageBoxW(g_app.hwndMain, L"当前不是应急禁用状态", L"提示", MB_OK);
+        MessageBoxW(g_app.hwndMain, L"Not in emergency-off state", L"Notice", MB_OK);
         return;
     }
     wcsncpy(g_app.v_folder, g_app.emergency_folder, MAX_PATH_W-1);
@@ -4127,7 +4136,7 @@ static void on_restore_prev(void) {
     invalidate_img_count();
     update_summary();
     refresh_image_list();
-    log_info(L"原配置已写回 config.ini，请点「重启资源管理器」让 DLL 重新加载");
+    log_info(L"Original config written back to config.ini; click Restart Explorer to reload the DLL");
 }
 
 /* ------------------------------------------------------------------ */
@@ -4137,11 +4146,11 @@ static void on_folder_ext_toggle(bool on) {
     g_app.v_folderExt = on;
     if (on) {
         if (MessageBoxW(g_app.hwndMain,
-            L"启用 folderExt 后，DLL 会注入到 13 个 Windows 系统进程的对话框窗口：\n"
+            L"With folderExt on, the DLL injects into dialogs of 13 Windows system processes:\n"
             L"SettingSyncHost / SkyDrive / FileManager / vmtoolsd / svchost / SearchIndexer /\n"
-            L"WSHost / wmpnetwk / dllhost / spoolsv / PhoneExperienceHost / RadeonSoftware / usysdiag。\n\n"
-            L"这些进程里的 [打开]/[保存] 对话框会出现背景图。\n\n确认启用吗？",
-            L"启用文件对话框背景", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) {
+            L"WSHost / wmpnetwk / dllhost / spoolsv / PhoneExperienceHost / RadeonSoftware / usysdiag.\n\n"
+            L"Open/Save dialogs in those processes will show the background.\n\nEnable?",
+            L"Enable file dialog background", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) {
             g_app.v_folderExt = false;
         }
     }
@@ -4165,7 +4174,7 @@ static void on_pos_select(int idx) {
 
 static void on_slider_change(void) {
     g_app.v_alpha = (int)SendMessageW(hSliderAlpha, TBM_GETPOS, 0, 0);
-    WCHAR buf[64]; sfmt(buf, 64, L"%d / 255（%d%%）", g_app.v_alpha, (int)round(g_app.v_alpha*100.0/255.0));
+    WCHAR buf[64]; sfmt(buf, 64, L"%d / 255(%d%%)", g_app.v_alpha, (int)round(g_app.v_alpha*100.0/255.0));
     SetWindowTextW(g_app.hwndAlphaReadout, buf);
     update_summary();
 }
@@ -4173,7 +4182,7 @@ static void on_slider_change(void) {
 static void on_browse_dir(void) {
     BROWSEINFOW bi = {0};
     bi.hwndOwner = g_app.hwndMain;
-    bi.lpszTitle = L"选择插件目录";
+    bi.lpszTitle = L"Select plugin folder";
     bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
     LPITEMIDLIST pidl = SHBrowseForFolderW(&bi);
     if (pidl) {
@@ -4187,7 +4196,7 @@ static void on_browse_dir(void) {
 static void on_browse_folder(void) {
     BROWSEINFOW bi = {0};
     bi.hwndOwner = g_app.hwndMain;
-    bi.lpszTitle = L"选择自定义图片目录";
+    bi.lpszTitle = L"Select custom image folder";
     bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
     LPITEMIDLIST pidl = SHBrowseForFolderW(&bi);
     if (pidl) {
@@ -4205,15 +4214,15 @@ static void on_browse_folder(void) {
         }
         update_summary();
         /* v1.3.12：custom 未勾选时该目录不会生效（列表/预览仍用插件 Image 目录），
-           用户会以为"选了没反应"——对齐 Python 版"选完就切"的观感，弹问是否勾选 */
+           用户会以为"picked but no reaction"——对齐 Python 版"switches right after picking"的观感，弹问是否勾选 */
         if (!g_app.v_custom) {
             WCHAR msg[1024];
             sfmt(msg, 1024,
-                 L"已选择目录：\n%s\n\n"
-                 L"该目录需要勾选『使用自定义图片文件夹』后才会被插件实际使用，"
-                 L"否则图片列表仍显示插件目录下的 Image。\n\n要现在勾选吗？",
+                 L"Folder selected:\n%s\n\n"
+                 L"This folder is only used after ticking \"Use a custom image folder\";"
+                 L"otherwise the list still shows the plugin's Image folder.\n\nTick it now?",
                  path);
-            if (MessageBoxW(g_app.hwndMain, msg, L"提示", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+            if (MessageBoxW(g_app.hwndMain, msg, L"Notice", MB_YESNO | MB_ICONQUESTION) == IDYES) {
                 on_custom_toggle(true);
                 sync_switch_ui();
             }
@@ -4225,23 +4234,23 @@ static void on_open_img_dir(void) {
     const WCHAR *folder = current_image_folder();
     if (!dir_exists(folder)) {
         WCHAR msg[1024];
-        sfmt(msg, 1024, L"图片目录不存在：\n%s\n\n要现在创建它吗？", folder);
-        if (MessageBoxW(g_app.hwndMain, msg, L"目录不存在", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) return;
+        sfmt(msg, 1024, L"Image folder does not exist:\n%s\n\nCreate it now?", folder);
+        if (MessageBoxW(g_app.hwndMain, msg, L"Folder does not exist", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) return;
         if (!CreateDirectoryW(folder, NULL) && GetLastError() != ERROR_ALREADY_EXISTS) {
-            WCHAR b[256]; sfmt(b, 256, L"创建失败（错误码 %lu）", GetLastError());
+            WCHAR b[256]; sfmt(b, 256, L"Creation failed (error %lu)", GetLastError());
             log_err(b);
-            MessageBoxW(g_app.hwndMain, b, L"失败", MB_OK | MB_ICONERROR);
+            MessageBoxW(g_app.hwndMain, b, L"Failed", MB_OK | MB_ICONERROR);
             return;
         }
         invalidate_img_count();
         refresh_image_list();
     }
     if ((INT_PTR)ShellExecuteW(g_app.hwndMain, L"open", folder, NULL, NULL, SW_SHOWNORMAL) <= 32)
-        log_warn(L"打开图片目录失败（可能没有关联的程序）");
+        log_warn(L"Failed to open the image folder (no associated program?)");
 }
 
 static void on_open_ini(void) {
-    if (!g_app.ini_exists) { MessageBoxW(g_app.hwndMain, L"config.ini 不存在", L"提示", MB_OK); return; }
+    if (!g_app.ini_exists) { MessageBoxW(g_app.hwndMain, L"config.ini does not exist", L"Notice", MB_OK); return; }
     ShellExecuteW(g_app.hwndMain, L"open", g_app.ini_path, NULL, NULL, SW_SHOWNORMAL);
 }
 
@@ -4251,11 +4260,11 @@ static void on_copy_summary(void) {
     /* v1.3.25(D1)：整分钟按分钟显示，秒级不足一分钟按秒显示 */
     if (g_app.v_rotsec > 0) {
         if (g_app.v_rotsec % 60 == 0)
-            sfmt(buf2, 128, L"%d 分钟（%d 秒）", g_app.v_rotsec / 60, g_app.v_rotsec);
+            sfmt(buf2, 128, L"%d min (%d sec)", g_app.v_rotsec / 60, g_app.v_rotsec);
         else
-            sfmt(buf2, 128, L"%d 秒", g_app.v_rotsec);
+            sfmt(buf2, 128, L"%d sec", g_app.v_rotsec);
     } else {
-        lstrcpynW(buf2, L"不轮换", 128);
+        lstrcpynW(buf2, L"No rotation", 128);
     }
     WCHAR ver_w[32];
     u8tow(GUI_VERSION, ver_w, 32);   /* 统一走安全转换助手（v1.3.3：补上本处漏网） */
@@ -4275,34 +4284,34 @@ static void on_copy_summary(void) {
         }
     }
     sfmt(buf, 4096,
-        L"本次刷新：%s\r\n"
+        L"Last refresh: %s\r\n"
         L"folderExt    : %s\r\n"
         L"noerror      : %s\r\n"
         L"random       : %s\r\n"
-        L"randomVal   : %s（0 = 不轮换；v1.3.25 起支持秒级，兼容键 randomMin 仍同步写入）\r\n"
+        L"randomVal   : %s (0 = no rotation; seconds supported since v1.3.25; legacy key randomMin kept in sync)\r\n"
         L"custom       : %s\r\n"
         L"posType      : %d · %s\r\n"
-        L"imgAlpha     : %d / 255（%d%%）\r\n"
+        L"imgAlpha     : %d / 255(%d%%)\r\n"
         L"folder       : %s\r\n"
-        L"imgcount     : %d 张\r\n"
+        L"imgcount     : %d images\r\n"
         L"dllstatus    : %s\r\n"
-        L"DLL 路径     : %s\r\n"
-        L"DLL 大小     : %s\r\n"
+        L"DLL path     : %s\r\n"
+        L"DLL size     : %s\r\n"
         L"DLL SHA256   : %s\r\n"
-        L"插件 CLSID   : %s\r\n"
-        L"程序版本     : backimg图形板 v%s\r\n"
-        L"配套 DLL 版本: v%S",
+        L"Plugin CLSID : %s\r\n"
+        L"Program ver  : backimg Panel v%s\r\n"
+        L"Paired DLL ver: v%S",
         g_app.last_refresh_time,
-        g_app.v_folderExt ? L"启用" : L"关闭",
-        g_app.v_noerror ? L"启用" : L"关闭",
-        g_app.v_random ? L"启用" : L"关闭",
+        g_app.v_folderExt ? L"Enabled" : L"Off",
+        g_app.v_noerror ? L"Enabled" : L"Off",
+        g_app.v_random ? L"Enabled" : L"Off",
         buf2,
-        g_app.v_custom ? L"启用" : L"关闭",
+        g_app.v_custom ? L"Enabled" : L"Off",
         g_app.v_posType, POS_NAMES[g_app.v_posType],
         g_app.v_alpha, (int)round(g_app.v_alpha*100.0/255.0),
-        g_app.v_folder[0] ? g_app.v_folder : L"未设置 → 用插件目录/Image",
+        g_app.v_folder[0] ? g_app.v_folder : L"not set → using plugin folder/Image",
         count_images_current(),
-        g_app.dll_exists ? (g_app.registered ? L"已注册" : L"未注册") : L"DLL 缺失",
+        g_app.dll_exists ? (g_app.registered ? L"registered" : L"not registered") : L"DLL missing",
         g_app.dll_path,
         dll_size,
         dll_sha,
@@ -4318,17 +4327,17 @@ static void on_copy_summary(void) {
                 memcpy(p, buf, n);
                 GlobalUnlock(h);
                 SetClipboardData(CF_UNICODETEXT, h);
-                log_info(L"摘要已复制到剪贴板");
+                log_info(L"Summary copied to the clipboard");
             } else {
                 GlobalFree(h);
-                log_err(L"复制失败：无法锁定剪贴板内存");
+                log_err(L"Copy failed: cannot lock clipboard memory");
             }
         } else {
-            log_err(L"复制失败：剪贴板内存分配失败");
+            log_err(L"Copy failed: clipboard memory allocation failed");
         }
         CloseClipboard();
     } else {
-        log_err(L"复制失败：无法打开剪贴板");
+        log_err(L"Copy failed: cannot open the clipboard");
     }
 }
 
@@ -4369,12 +4378,12 @@ static void on_rule_add(void) {
     WCHAR path[MAX_PATH_W]; GetWindowTextW(g_app.hwndRulePath, path, MAX_PATH_W);
     WCHAR img[MAX_PATH_W] = L"";
     if (g_cb_img.cur >= 0) lstrcpynW(img, g_cb_img.items[g_cb_img.cur], MAX_PATH_W);   /* v1.3.9 */
-    if (!path[0]) { MessageBoxW(g_app.hwndMain, L"请先填写文件夹路径", L"提示", MB_OK); return; }
+    if (!path[0]) { MessageBoxW(g_app.hwndMain, L"Enter a folder path first", L"Notice", MB_OK); return; }
     if (wcschr(path, L'#') || wcschr(path, L'[') || wcschr(path, L']')) {
-        MessageBoxW(g_app.hwndMain, L"路径不能包含 # [ ] 字符，会破坏 INI 语法", L"路径非法", MB_OK|MB_ICONWARNING);
+        MessageBoxW(g_app.hwndMain, L"Path cannot contain # [ ] characters; they break INI syntax", L"Invalid path", MB_OK|MB_ICONWARNING);
         return;
     }
-    /* v1.3.13（豆包核验观察点 #3）：允许 img 留空——"路径不配图"的规则用于
+    /* v1.3.13（豆包核验观察点 #3）：允许 img 留空——"no image on this path"的规则用于
        清背景（对齐 Python 版 _adv_add：只拦空路径，不拦空图片） */
     /* 图片非空时校验是否存在（不存在二次确认，与原版行为一致） */
     if (img[0]) {
@@ -4384,10 +4393,10 @@ static void on_rule_add(void) {
         if (!file_exists(full)) {
             WCHAR msg[1024];
             sfmt(msg, 1024,
-                 L"在图片目录里找不到这个文件：\n%s\n\n"
-                 L"（目录：%s）\n\n仍要写入这条规则吗？", img, folder);
-            if (MessageBoxW(g_app.hwndMain, msg, L"图片不存在", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) return;
-            log_warn(L"图片文件不存在，已按用户确认写入规则");
+                 L"File not found in the image folder:\n%s\n\n"
+                 L"(Folder: %s)\n\nWrite this rule anyway?", img, folder);
+            if (MessageBoxW(g_app.hwndMain, msg, L"Image not found", MB_YESNO | MB_ICONEXCLAMATION) != IDYES) return;
+            log_warn(L"Image file missing; rule written after user confirmation");
         }
     }
     char sec[4096]; wtou8(path, sec, sizeof(sec));
@@ -4398,30 +4407,30 @@ static void on_rule_add(void) {
      * 放大本身不产生超长行：合法文件名 ≤255 字符，实际写入值 ≤1020 字节。 */
     char imgc[12288]; wtou8(img, imgc, sizeof(imgc));
     ini_set(sec, "img", imgc);
-    if (!ini_commit()) { log_err(L"专属规则写入失败：config.ini 无法写入（只读或被占用）"); return; }
-    log_info(L"专属规则已写入");
+    if (!ini_commit()) { log_err(L"Failed to write per-folder rule: config.ini not writable (read-only or locked)"); return; }
+    log_info(L"Per-folder rule written");
     refresh_rule_list();
 }
 
 static void on_rule_del(void) {
     int idx = (int)SendMessageW(g_app.hwndRuleList, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
     if (idx < 0) {
-        MessageBoxW(g_app.hwndMain, L"请先在左侧列表里选中一条规则。", L"提示", MB_OK);
+        MessageBoxW(g_app.hwndMain, L"Select a rule in the list on the left first.", L"Notice", MB_OK);
         return;
     }
     LVITEMW it = {0};
     it.mask = LVIF_PARAM; it.iItem = idx;
     if (!SendMessageW(g_app.hwndRuleList, LVM_GETITEMW, 0, (LPARAM)&it) || !it.lParam) {
-        MessageBoxW(g_app.hwndMain, L"读取规则失败，请点「刷新列表」后重试。", L"提示", MB_OK | MB_ICONWARNING);
+        MessageBoxW(g_app.hwndMain, L"Failed to read rules; click Refresh list and retry.", L"Notice", MB_OK | MB_ICONWARNING);
         return;
     }
     const WCHAR *secw = (const WCHAR*)it.lParam;
     char sec[4096]; wtou8(secw, sec, sizeof(sec));
-    if (MessageBoxW(g_app.hwndMain, L"确定删除这条专属背景规则吗？", L"确认删除",
+    if (MessageBoxW(g_app.hwndMain, L"Delete this per-folder background rule?", L"Confirm delete",
                     MB_YESNO | MB_ICONEXCLAMATION) != IDYES) return;
     remove_folder_section(sec);
-    if (!ini_commit()) { log_err(L"专属规则删除失败：config.ini 无法写入（只读或被占用）"); return; }
-    log_info(L"专属规则已删除");
+    if (!ini_commit()) { log_err(L"Failed to delete per-folder rule: config.ini not writable (read-only or locked)"); return; }
+    log_info(L"Per-folder rule deleted");
     refresh_rule_list();
 }
 
@@ -4457,16 +4466,34 @@ static void preview_meta_update(const WCHAR *name, const WCHAR *dim, bool show) 
     MapWindowPoints(NULL, GetParent(name_h), (POINT*)&rc, 1);
     int row_y = rc.top;                           /* 行 y 由创建时的布局决定 */
     int x = pt_scaled(12);
-    int nw = text_width_f(name, g_app.font_ui) + pt_scaled(4);
-    MoveWindow(name_h, x, row_y, nw, rc.bottom - rc.top, TRUE);
-    x += nw + pt_scaled(8);
     RECT rc2; GetWindowRect(dim_h, &rc2);
     int dh = rc2.bottom - rc2.top;
-    int dw = text_width_f(dim, g_app.font_ui) + pt_scaled(4);
+    int dw = text_width_f(dim, g_app.font_bold) + pt_scaled(4);
+    RECT rc3; GetWindowRect(cod_h, &rc3);
+    int cw3 = rc3.right - rc3.left;
+    /* R4（Deepseek V4.1 Flash 1017 复核）：长文件名压缩 —— name 超宽时截断加省略号，
+     * 保证 name+尺寸+芯片三件套不越出预览卡右缘（45 字符文件名时芯片曾越界 33px） */
+    RECT prc; GetClientRect(GetParent(name_h), &prc);
+    int nw_max = prc.right - x - pt_scaled(8) - dw - pt_scaled(8) - cw3 - pt_scaled(12);
+    if (nw_max < pt_scaled(40)) nw_max = pt_scaled(40);
+    WCHAR shown[MAX_PATH_W];
+    lstrcpynW(shown, name, MAX_PATH_W);
+    int nw = text_width_f(shown, g_app.font_bold) + pt_scaled(4);
+    if (nw > nw_max) {
+        int keep = lstrlenW(shown);
+        while (keep > 4 && nw > nw_max) {
+            shown[keep - 1] = L'…';
+            shown[keep] = 0;
+            nw = text_width_f(shown, g_app.font_bold) + pt_scaled(4);
+            keep--;
+        }
+        SetWindowTextW(name_h, shown);
+    }
+    MoveWindow(name_h, x, row_y, nw, rc.bottom - rc.top, TRUE);
+    x += nw + pt_scaled(8);
     MoveWindow(dim_h, x, row_y, dw, dh, TRUE);
     x += dw + pt_scaled(8);
-    RECT rc3; GetWindowRect(cod_h, &rc3);
-    MoveWindow(cod_h, x, row_y + pt_scaled(1), rc3.right - rc3.left, rc3.bottom - rc3.top, TRUE);
+    MoveWindow(cod_h, x, row_y + pt_scaled(1), cw3, rc3.bottom - rc3.top, TRUE);
     ShowWindow(name_h, SW_SHOW);
     ShowWindow(dim_h, SW_SHOW);
     ShowWindow(cod_h, SW_SHOW);
@@ -4491,7 +4518,7 @@ static void on_img_select(int idx) {
     if (!file_exists(full)) {
         set_preview_bitmap(NULL);
         preview_meta_update(L"", L"", false);
-        log_warn(L"预览失败：图片文件已不存在");
+        log_warn(L"Preview failed: the image file no longer exists");
         return;
     }
     sfmt(g_app.preview_path, MAX_PATH_W, L"%s", full);
@@ -4500,9 +4527,9 @@ static void on_img_select(int idx) {
     int ph = rc.bottom - pt_scaled(24);
     if (pw < 16) pw = 16;      /* 控件过小时不能传负值给 GDI+ */
     if (ph < 16) ph = 16;
-    /* v1.3.12：大图解码前先提示（对齐 Python 版 v1.2.3"先提示"行为）——
+    /* v1.3.12：大图解码前先提示（对齐 Python 版 v1.2.3"prompt first"行为）——
        解码在主线程同步进行，>30MB 会卡几秒，先清旧图、日志提示、换等待光标，
-       避免"点了没反应"的观感 */
+       避免"clicked but no reaction"的观感 */
     bool big = false;
     HCURSOR hcur_old = NULL;
     {
@@ -4513,7 +4540,7 @@ static void on_img_select(int idx) {
                 big = true;
                 set_preview_bitmap(NULL);
                 WCHAR b[160];
-                sfmt(b, 160, L"图片较大（%.1f MB），正在生成预览…", fsz / (1024.0 * 1024.0));
+                sfmt(b, 160, L"Large image (%.1f MB); generating preview…", fsz / (1024.0 * 1024.0));
                 log_info(b);
                 UpdateWindow(g_app.hwndLog);
                 UpdateWindow(g_app.hwndMain);
@@ -4654,7 +4681,7 @@ static void rebuild_ui(void) {
     {
         RECT crc; GetClientRect(hwnd, &crc);
         WCHAR b[160];
-        sfmt(b, 160, L"[重建布局] 客户区 %ldx%ld，base=%dx%d",
+        sfmt(b, 160, L"[rebuild layout] client %ldx%ld, base=%dx%d",
              (long)crc.right, (long)crc.bottom, g_app.base_w, g_app.base_h);
         log_info(b);
     }
@@ -4706,7 +4733,7 @@ static void apply_scale_choice(HWND hwnd, int sel) {
     write_pref_file(L"scaling.ini", SCALE_CHOICES[sel]);
     {
         WCHAR b[128];
-        sfmt(b, 128, L"界面缩放已切换为 %s，正在重建界面", SCALE_CHOICES[sel]);
+        sfmt(b, 128, L"UI scaling switched to %s; rebuilding the UI", SCALE_CHOICES[sel]);
         log_info(b);
     }
     SetWindowTextW(g_app.hwndScaleBtn, SCALE_CHOICES[sel]);
@@ -4755,7 +4782,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         /* 基础配置页内容约需 400px 卡片高 + 目录卡 + 底栏/日志，
            窗口再小内容会被裁切（v1.3.3 窄窗实测发现），故设最小可拉尺寸 */
         MINMAXINFO *mmi = (MINMAXINFO *)lParam;
-        mmi->ptMinTrackSize.x = (LONG)(g_app.scale_factor * 880);
+        mmi->ptMinTrackSize.x = (LONG)(g_app.scale_factor * 1020);
         mmi->ptMinTrackSize.y = (LONG)(g_app.scale_factor * 970);
         return 0;
     }
@@ -4765,7 +4792,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         if (g_first_size) { g_first_size = false; break; }
         RECT crc; GetClientRect(hwnd, &crc);
         if (crc.right <= 50 || crc.bottom <= 50) break;
-        /* v1.3.2：只有"用户手动拉伸"才更新名义基准。
+        /* v1.3.2：只有"user manual stretch"才更新名义基准。
            缩放切换时窗口尺寸本来就是 nominal×factor，与期望值一致，
            若在这里再改写 nominal，每切一次缩放就会小掉一圈边框（上轮 P2）。 */
         int exp_w = (int)round(g_app.nominal_w * g_app.scale_factor);
@@ -4786,7 +4813,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     case WM_CTLCOLORBTN: {
         /* v1.3.7：owner-draw 按钮先被本刷子擦整个矩形再画圆角主体——之前
            缺这个分支，DefWindowProc 返回系统灰 COLOR_BTNFACE，按钮圆角四角
-           露出直角灰块（用户标注"圆角外的阴影是直角"）。按按钮父容器底色
+           露出直角灰块（用户标注"shadow outside rounded corners is square"）。按按钮父容器底色
            返回画刷，规则与 WM_CTLCOLORSTATIC 一致（只定底色、不动文字色） */
         HWND parent = GetParent((HWND)lParam);
         static HBRUSH br_btn_white = NULL, br_btn_loghead = NULL, br_btn_seg = NULL;
@@ -4943,15 +4970,15 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         clear_busy();
         DWORD code = (DWORD)lParam;
         if (!wParam) {
-            WCHAR b[256]; sfmt(b, 256, L"注册失败：未能启动 regsvr32（可能 UAC 被取消）");
+            WCHAR b[256]; sfmt(b, 256, L"Register failed: could not start regsvr32 (UAC may have been cancelled)");
             log_err(b);
-            MessageBoxW(hwnd, L"注册失败：未能启动 regsvr32（UAC 可能被取消）。", L"失败", MB_OK | MB_ICONERROR);
+            MessageBoxW(hwnd, L"Register failed: could not start regsvr32 (UAC may have been cancelled).", L"Failed", MB_OK | MB_ICONERROR);
         } else if (code != 0) {
-            WCHAR b[256]; sfmt(b, 256, L"注册失败：regsvr32 退出码 %lu", code);
+            WCHAR b[256]; sfmt(b, 256, L"Register failed: regsvr32 exit code %lu", code);
             log_err(b);
-            MessageBoxW(hwnd, b, L"失败", MB_OK | MB_ICONERROR);
+            MessageBoxW(hwnd, b, L"Failed", MB_OK | MB_ICONERROR);
         } else {
-            log_info(L"注册完成");
+            log_info(L"Registration complete");
         }
         browse_plugin(g_app.plugin_dir);
         break;
@@ -4960,14 +4987,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         clear_busy();
         DWORD code = (DWORD)lParam;
         if (!wParam) {
-            log_err(L"注销失败：未能启动 regsvr32（可能 UAC 被取消）");
-            MessageBoxW(hwnd, L"注销失败：未能启动 regsvr32（UAC 可能被取消）。", L"失败", MB_OK | MB_ICONERROR);
+            log_err(L"Unregister failed: could not start regsvr32 (UAC may have been cancelled)");
+            MessageBoxW(hwnd, L"Unregister failed: could not start regsvr32 (UAC may have been cancelled).", L"Failed", MB_OK | MB_ICONERROR);
         } else if (code != 0) {
-            WCHAR b[256]; sfmt(b, 256, L"注销失败：regsvr32 退出码 %lu", code);
+            WCHAR b[256]; sfmt(b, 256, L"Unregister failed: regsvr32 exit code %lu", code);
             log_err(b);
-            MessageBoxW(hwnd, b, L"失败", MB_OK | MB_ICONERROR);
+            MessageBoxW(hwnd, b, L"Failed", MB_OK | MB_ICONERROR);
         } else {
-            log_info(L"注销完成");
+            log_info(L"Unregistration complete");
         }
         browse_plugin(g_app.plugin_dir);
         break;
@@ -4977,12 +5004,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         int flag = (int)wParam;
         DWORD tk = (DWORD)lParam;
         if (flag == 0) {
-            log_err(L"重启资源管理器失败：无法执行 taskkill");
+            log_err(L"Restart Explorer failed: could not run taskkill");
         } else if (flag == 2) {
-            WCHAR b[256]; sfmt(b, 256, L"taskkill 退出码 %lu（explorer 可能未在运行），已尝试启动新实例", tk);
+            WCHAR b[256]; sfmt(b, 256, L"taskkill exit code %lu (explorer may not be running); tried starting a new instance", tk);
             log_warn(b);
         } else {
-            log_info(L"资源管理器已重启");
+            log_info(L"Explorer restarted");
         }
         SetTimer(hwnd, 1, 2500, NULL);
         break;
@@ -4997,7 +5024,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         else if (wParam == TIMER_BUSY_WATCHDOG) {
             KillTimer(hwnd, TIMER_BUSY_WATCHDOG);
             if (g_app.busy) {
-                log_warn(L"操作超时（60 秒无响应），已强制解锁按钮");
+                log_warn(L"Operation timed out (60 s, no response); buttons force-unlocked");
                 clear_busy();
             }
         }
@@ -5046,7 +5073,7 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, LPWSTR lpCmd, int nShow) {
     (void)hPrev; (void)lpCmd;
 
     if (GetVersion() >= 0x80000000) {
-        MessageBoxW(NULL, L"本程序仅支持 Windows 10/11。", L"提示", MB_OK);
+        MessageBoxW(NULL, L"This program supports Windows 10/11 only.", L"Notice", MB_OK);
         return 1;
     }
 
@@ -5059,7 +5086,7 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, LPWSTR lpCmd, int nShow) {
     /* 单实例锁 */
     g_app.hMutex = CreateMutexW(NULL, FALSE, L"{ED15A97D-FE3E-4CDE-98FF-BC46B02896B0}_backimg_gui");
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
-        MessageBoxW(NULL, L"backimg图形板 已经在运行中。\n请勿重复打开。", L"提示", MB_ICONWARNING);
+        MessageBoxW(NULL, L"backimg Panel is already running.\nDo not open it twice.", L"Notice", MB_ICONWARNING);
         return 1;
     }
 
@@ -5191,7 +5218,7 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, LPWSTR lpCmd, int nShow) {
     }
     WCHAR titlebuf[160], ver_w[32];
     u8tow(GUI_VERSION, ver_w, 32);   /* v1.3.2：统一走安全转换助手 */
-    sfmt(titlebuf, 160, L"%s  v%s  (配套 DLL v%S)", APP_NAME_W, ver_w, DLL_VERSION);
+    sfmt(titlebuf, 160, L"%s v%s (paired DLL v%S)", APP_NAME_W, ver_w, DLL_VERSION);
     HWND hwnd = CreateWindowExW(WS_EX_APPWINDOW | WS_EX_WINDOWEDGE,
                                 L"backimgMainWnd",
                                 titlebuf,
@@ -5214,7 +5241,7 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, LPWSTR lpCmd, int nShow) {
     browse_plugin(g_app.plugin_dir);
     load_config();
 
-    log_info(L"backimg图形板已启动");
+    log_info(L"backimg Panel started");
 
     /* 启动后 DLL 校验 */
     SetTimer(hwnd, 2, 400, NULL);

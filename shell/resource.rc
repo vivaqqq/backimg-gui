@@ -1,9 +1,9 @@
-// backimg 图形板 v1.3.28 (C 语言版) 资源定义
+// backimg 图形板 v1.3.28 (C 语言版) 资源定义 —— English UI build
 // 内嵌 ExplorerBgTool.dll、默认 config.ini、app.ico
 // 版本号与 main.c 中 GUI_VERSION 保持一致，每次修改同步递增
 // 素材文件放在上级目录（各版本目录共用同一份，避免重复拷贝）
 
-// v1.3.15：本文件是 UTF-8，windres 默认按系统 ACP(GBK) 解释字符串字面量，
+// 本文件是 UTF-8，windres 默认按系统 ACP(GBK) 解释字符串字面量，
 // 显式声明代码页，谁编译都不会再错。
 #pragma code_page(65001)
 
@@ -26,19 +26,19 @@ FILETYPE        VFT_APP
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "080404B0"
+        BLOCK "040904B0"
         BEGIN
-            VALUE "FileDescription",  "backimg 图形板 - ExplorerBgTool 配置面板"
+            VALUE "FileDescription",  "backimg Panel (English UI) - config panel for ExplorerBgTool"
             VALUE "FileVersion",      "1.3.28.0"
             VALUE "InternalName",     "backimg_GUI"
-            VALUE "LegalCopyright",   "ExplorerBgTool.dll 版权归 Maplespe 所有；图形面板部分由 WorkBuddy 在豆包审稿协助下编写。"
-            VALUE "OriginalFilename", "backimg图形板_v1.3.28.exe"
-            VALUE "ProductName",      "backimg 图形板"
-            VALUE "ProductVersion",   "1.3.28 (配套 DLL v1.3.28 秒级轮换+目录自愈版)"
+            VALUE "LegalCopyright",   "ExplorerBgTool.dll (c) Maplespe; GUI panel written by WorkBuddy (GLM), design reviewed by Doubao."
+            VALUE "OriginalFilename", "backimg-gui_en_v1.3.28.exe"
+            VALUE "ProductName",      "backimg Panel (English UI)"
+            VALUE "ProductVersion",   "1.3.28 (paired DLL v1.3.28)"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x0804, 0x04B0
+        VALUE "Translation", 0x0409, 0x04B0
     END
 END
