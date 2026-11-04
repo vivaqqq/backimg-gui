@@ -1,95 +1,93 @@
-# backimg-gui（backimg 图形板）
+# backimg-gui (backimg Panel)
 
-给 Windows 文件资源管理器的文件夹窗口铺上自定义背景图——支持多图随机、秒/分钟级定时轮换、等比缩放实时跟随窗口、文件对话框铺图。
+Lay a custom background image over the folder windows of Windows File Explorer — supports multiple images with random image rotation, second/minute-level timed rotation, aspect-ratio-preserving scaling that follows the window live, and background images in file dialogs.
 
-| 中文界面（backimg 图形板） | English UI (backimg Panel) |
+| Chinese UI (backimg Panel) | English UI (backimg Panel) |
 |---|---|
-| ![backimg 图形板中文界面](docs/screenshot.png) | ![backimg Panel English UI](docs/screenshot-en.png) |
+| ![backimg Panel Chinese UI](docs/screenshot.png) | ![backimg Panel English UI](docs/screenshot-en.png) |
 
-## 下载（预编译包）
+## Downloads (Prebuilt Packages)
 
-到 [Releases · v1.3.28](https://github.com/vivaqqq/backimg-gui/releases/tag/v1.3.28) 下载，解压即用（含图形板 exe + DLL + 配置模板 + 说明）：
+Download from [Releases · v1.3.28](https://github.com/vivaqqq/backimg-gui/releases/tag/v1.3.28), unzip and run (contains the backimg Panel exe + DLL + configuration template + documentation):
 
-| 包 | 界面语言 |
+| Package | UI Language |
 |---|---|
-| `backimg-gui_v1.3.28.zip` | 中文 |
+| `backimg-gui_v1.3.28.zip` | Chinese |
 | `backimg-gui_v1.3.28_english-ui.zip` | English |
 
-英文界面的源码在 [`english-ui`](https://github.com/vivaqqq/backimg-gui/tree/english-ui) 分支（`shell/` 目录）。
+The source code for the English UI lives on the [`english-ui`](https://github.com/vivaqqq/backimg-gui/tree/english-ui) branch (`shell/` directory).
 
-> **📌 诚实声明**：这个仓库、所有源代码的修复与增强、以及把它开源上架的整个过程，**全部由 AI 完成**——主力是 WorkBuddy（GLM 大模型），修复与审计环节还用了千问、Kimi、DeepSeek、混元、豆包做多轮交叉审计。仓库主人**完全不懂代码**，是零代码用户，全程只负责提需求、验收和按下"发布"。源代码和程序都放在这里，MIT 协议随便用——**觉得不满意？欢迎自己拿回家改**，这正是开源的意义。
->
 > **📌 Honest Disclosure**: This repository — every fix, every feature, and the entire process of open-sourcing it — was **built entirely with AI**. The main workhorse was WorkBuddy (the GLM large language model), with fixes and audits cross-checked over multiple rounds by Qwen, Kimi, DeepSeek, Hunyuan, and Doubao. The repo owner **cannot write code at all** — a zero-code user who only provided requirements, reviewed the results, and pressed "publish". Both the source code and the program are right here under the MIT license — **not satisfied? Feel free to take it home and modify it yourself**. That is exactly what open source is for.
 
-> 本项目基于 [Maplespe/explorerTool](https://github.com/Maplespe/explorerTool)（MIT License，Copyright © 2021 Maplespe）深度增强而来，原版 DLL 的全部能力保留，其上叠加了大量修复与功能扩展。原作介绍页：[winmoes.com](https://winmoes.com/tools/12556.html)。
+> This project is a deeply enhanced work based on [Maplespe/explorerTool](https://github.com/Maplespe/explorerTool) (MIT License, Copyright © 2021 Maplespe). All capabilities of the original DLL are preserved, with a large number of fixes and feature extensions layered on top. The original author's introduction page: [winmoes.com](https://winmoes.com/tools/12556.html).
 
-## 定位声明（请先读这段）
+## Positioning Statement (Read This First)
 
-- 这是作者的**个人魔改增强版**，按 **AS-IS** 提供：**不承诺维护**，不承诺修复任何 Issue。
-- 欢迎提交带完整日志的 Bug 报告与 PR；能否修复、何时修复不作保证。
-- **兼容性**：作者在 Windows 11 实机开发测试；Windows 10 是原版支持的平台，本分支改动集中于 GDI+ 绘图层，理论上兼容但**未实测**，欢迎实测反馈。
+- This is the author's **personal modified enhancement build**, provided **AS-IS**: **no maintenance is promised**, and there is no promise to fix any Issue.
+- Bug reports with complete logs and PRs are welcome; whether and when anything gets fixed is not guaranteed.
+- **Compatibility**: The author develops and tests on real Windows 11 hardware; Windows 10 is a platform supported by the original version, and this branch's changes are concentrated in the GDI+ drawing layer — theoretically compatible but **not tested on real hardware**; real-machine test feedback is welcome.
 
-## 相对原版的主要增强
+## Key Enhancements over the Original
 
-| # | 增强 | 说明 |
+| # | Enhancement | Description |
 |---|------|------|
-| 1 | 图片格式扩至 7 种 | png / jpg / jpeg / bmp / gif（取首帧）/ tif / tiff，原版仅 png、jpg |
-| 2 | 运行日志 | `plugin/ExplorerBgTool_init.log`，排查问题不再靠猜 |
-| 3 | 坏文件拒收 | 伪装成图片的损坏文件不再进入随机池 |
-| 4 | 等比缩放 + 实时跟随 | 七档显示位置均等比不变形；拖动/最大化实时跟随；GDI+ 双三次高质量插值；缩放缓存 |
-| 5 | 定时轮换 | 真·随机源；支持秒级（如 30 秒）与分钟级间隔，每个文件夹窗口独立换图 |
-| 6 | 自定义目录自愈 | 目录不存在时轻量重试，配置恢复后自动恢复显示 |
-| 7 | 图形面板（图形板） | Win32 纯 C 外壳：注册/注销 DLL、选图、调参、恢复配置，内嵌 DLL 并做 SHA256 成对校验 |
+| 1 | Image formats expanded to 7 | png / jpg / jpeg / bmp / gif (first frame) / tif / tiff; the original supported only png and jpg |
+| 2 | Runtime log | `plugin/ExplorerBgTool_init.log` — troubleshooting is no longer guesswork |
+| 3 | Bad-file rejection | Corrupted files disguised as images no longer enter the random pool |
+| 4 | Aspect-ratio-preserving scaling + live window following | All seven display positions scale proportionally without distortion; follows dragging/maximizing live; GDI+ bicubic high-quality interpolation; scaling cache |
+| 5 | Timed rotation | True random source; supports second-level (e.g. 30 seconds) and minute-level intervals, with each folder window switching images independently |
+| 6 | Custom directory self-healing | Lightweight retries when the directory is missing; display recovers automatically once the configuration is back |
+| 7 | backimg Panel | Pure C Win32 shell: register/unregister the DLL, select images, tune parameters, restore configuration; embeds the DLL and performs a SHA256 pairing check |
 
-完整对照见 [docs/功能对照说明.md](docs/功能对照说明.md)；逐版本修改细节见 [dll/changelog/](dll/changelog/)（v1.3.15 → v1.3.28 共 14 份变更清单与迭代总卷）。
+For the full comparison see [docs/feature-comparison.md](docs/feature-comparison.md); for version-by-version change details see [dll/changelog/](dll/changelog/) (14 changelogs plus the master iteration report, v1.3.15 → v1.3.28).
 
-## 构建
+## Build
 
-需要 [MinGW-w64](https://www.mingw-w64.org/)（g++ / gcc / windres）。
+Requires [MinGW-w64](https://www.mingw-w64.org/) (g++ / gcc / windres).
 
 ```bat
-:: 1. 构建 DLL（输出到 ..\build\ExplorerBgTool.dll）
+:: 1. Build the DLL (output to ..\build\ExplorerBgTool.dll)
 cd dll
-build.cmd <MinGW-w64的bin目录>
+build.cmd <MinGW-w64 bin directory>
 
-:: 2. 构建图形面板（输出 backimg图形板_v1.3.28.exe）
+:: 2. Build the backimg Panel (outputs backimg Panel_v1.3.28.exe)
 cd ..\shell
 build.cmd
 ```
 
-## 使用方法
+## Usage
 
-1. 管理员身份运行图形板（需要注册 DLL：`regsvr32`）
-2. 选择图片目录 → 选择显示位置 → 保存配置 → 重启资源管理器
-3. 想要定时换图：基础配置页「随机显示图片」选档位或"自定义…"，填数字选分钟/秒钟 → 保存 → 重启资源管理器
-4. 升级安装时，`exe` 与 `plugin/ExplorerBgTool.dll` 必须**成对替换**（内嵌 SHA256 校验不一致会弹警告）
-5. 出现崩溃时：按住 `ESC` 再打开资源管理器（不加载图片），然后注销本工具
+1. Run the backimg Panel as administrator (registering the DLL requires `regsvr32`)
+2. Select the image directory → select the display position → save the configuration → restart Explorer
+3. For timed image rotation: on the basic configuration page, under "random image rotation", pick a preset or "Custom…", enter a number for minutes/seconds → save → restart Explorer
+4. When upgrading, the `exe` and `plugin/ExplorerBgTool.dll` must be **replaced as a pair** (a mismatch in the embedded SHA256 pairing check pops a warning)
+5. If a crash occurs: hold `ESC` while opening Explorer (images will not load), then unregister this tool
 
-## 目录结构
+## Directory Structure
 
 ```
-├── shell/              图形面板源码（纯 C + Win32）
-├── dll/                ExplorerBgTool.dll 源码（C++，MinHook 钩子）
-│   └── changelog/      v1.3.15 → v1.3.28 逐版本变更清单 + 迭代总卷
-├── docs/               原版 vs 本版功能对照说明
+├── shell/              backimg Panel source (pure C + Win32)
+├── dll/                ExplorerBgTool.dll source (C++, MinHook hooks)
+│   └── changelog/      v1.3.15 → v1.3.28 per-version changelogs + master iteration report
+├── docs/               original vs. this build feature comparison
 └── plugin/
-    └── config.ini.example  配置文件模板（含全部配置键的中英注释）
+    └── config.ini.example  configuration file template (with Chinese and English comments for every configuration key)
 ```
 
-## 配置
+## Configuration
 
-配置键说明见 [`plugin/config.ini.example`](plugin/config.ini.example)，与上游 v1.3.25+ 完全兼容，旧配置可直接使用。修改后重开资源管理器窗口即生效（无需重启 explorer）。
+For configuration key documentation see [`plugin/config.ini.example`](plugin/config.ini.example); fully compatible with upstream v1.3.25+, and old configuration files can be used directly. After editing, reopen Explorer windows for changes to take effect (no need to restart explorer).
 
-## 已知设计取舍（非 Bug）
+## Known Design Trade-offs (Not Bugs)
 
-- 「左上/右上/左下/右下/居中」五档：图片放得下按原始像素摆放，放不下才等比缩小——小图不会被放大成糊图；需要随窗口放大请选「缩放」档
-- 「缩放」= 整图完整适配（等比，可能留白）；「缩放并填充」= 等比铺满居中裁溢出
-- 替换同名图片内容需重启 explorer 才生效（与上游一致）
-- 缓存内存上界语义：单线程 = 预算（缩放 32MB / 源图 64MB）+ 最大单条；单一超大图允许超预算驻留，最坏情况有界且已知
+- For the five positions "Top-left / Top-right / Bottom-left / Bottom-right / Center": if the image fits, it is placed at original pixel size; only when it does not fit is it scaled down proportionally — small images are never blown up into a blurry mess; to have the image grow with the window, choose the "Scale" position
+- "Scale" = the whole image fits the window in full (aspect-ratio-preserving, may leave margins); "Scale and Fill" = fills the window proportionally, centered, cropping the overflow
+- Replacing the content of a same-named image requires restarting explorer to take effect (same as upstream)
+- Scaling cache memory ceiling semantics: single thread = budget (scaling 32MB / source images 64MB) + the largest single entry; a single oversized image is allowed to stay resident beyond the budget — the worst case is bounded and known
 
-## 许可证
+## License
 
-[MIT](LICENSE)。
+[MIT](LICENSE).
 
-- 原版 ExplorerBgTool：Copyright © 2021 [Maplespe](https://github.com/Maplespe)
-- 本仓库中的修改部分：同样以 MIT 协议发布
+- Original ExplorerBgTool: Copyright © 2021 [Maplespe](https://github.com/Maplespe)
+- Modified portions in this repository: also released under the MIT license
