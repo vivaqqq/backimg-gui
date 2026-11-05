@@ -100,7 +100,8 @@ inline unsigned int Crc32(const unsigned char* data, size_t len, unsigned int cr
 * （实测用户目录里有一张 212 个 IDAT 块的），
 * 循环本身不会跑飞：每轮 pos 至少前进 12 字节，且块长已做越界校验。
 */
-inline ImageProbeResult ProbePng(const unsigned char* d, size_t n, int* outW, int* outH)
+inline ImageProbeResult ProbePng(const unsigned char* d, size_t n, int* outW, int* outH,
+                                 bool headOnly = false)
 {
     if (n < 8 + 8 + 13 + 4)
         return IMG_SUSPECT;                  /* 连 IHDR 都放不下 */
@@ -141,6 +142,12 @@ inline ImageProbeResult ProbePng(const unsigned char* d, size_t n, int* outW, in
                 *outW = (int)w;
                 *outH = (int)h;
                 sawIHDR = true;
+                /* v1.3.29(R2/L1)：headOnly 模式（缓冲区通常只是文件头部，
+                 * 不含 IEND）—— IHDR 校验通过即判 OK，宽高已确证。
+                 * 下方块走查在部分缓冲上会把"块超出缓冲区"误判为截断，
+                 * 因此不再往下走；截断文件由绘制期解码兜底。 */
+                if (headOnly)
+                    return IMG_OK;
             }
         }
         else if (type[0] == 'I' && type[1] == 'E' && type[2] == 'N' && type[3] == 'D')
@@ -162,7 +169,8 @@ inline ImageProbeResult ProbePng(const unsigned char* d, size_t n, int* outW, in
 * 保守检查：SOI 开头、EOI 结尾，并尽力从 SOF 段取宽高。
 * JPEG 的 marker 结构很复杂，取不到宽高就交回 UNKNOWN，交给 GDI+。
 */
-inline ImageProbeResult ProbeJpeg(const unsigned char* d, size_t n, int* outW, int* outH)
+inline ImageProbeResult ProbeJpeg(const unsigned char* d, size_t n, int* outW, int* outH,
+                                  bool headOnly = false)
 {
     if (n < 4)
         return IMG_SUSPECT;
@@ -171,7 +179,9 @@ inline ImageProbeResult ProbeJpeg(const unsigned char* d, size_t n, int* outW, i
     /* v1.3.19(审计修复 P3-1)：结尾没有 EOI 不再直接判死。
      * 带尾随数据的 JPEG（结尾被追加过字节）同样缺 EOI，但 GDI+ 照样能解；
      * 按"解析器绝不单独否决一张图"的原则交给 GDI+ 裁决。 */
-    if (d[n - 2] != 0xFF || d[n - 1] != 0xD9)  /* EOI */
+    /* v1.3.29(R2/L1)：headOnly 模式下缓冲区末尾是图片中段数据，EOI 检查
+     * 必然失手 —— 跳过（截断文件由绘制期解码兜底）。 */
+    if (!headOnly && (d[n - 2] != 0xFF || d[n - 1] != 0xD9))  /* EOI */
         return IMG_UNKNOWN;
 
     /* 顺着 marker 链找 SOF（C0-CF，排除 C4/C8/CC） */
@@ -190,10 +200,10 @@ inline ImageProbeResult ProbeJpeg(const unsigned char* d, size_t n, int* outW, i
         if (m == 0xD9)                         /* EOI */
             break;
         if (pos + 4 > n)
-            return IMG_SUSPECT;
+            return headOnly ? IMG_UNKNOWN : IMG_SUSPECT;
         unsigned int segLen = ReadBE16(d + pos + 2);
         if (segLen < 2 || pos + 2 + segLen > n)
-            return IMG_SUSPECT;                /* 段长越界 = 截断 */
+            return headOnly ? IMG_UNKNOWN : IMG_SUSPECT;   /* 全量=截断确证；头部=读不到，交 GDI+ */
 
         if (m >= 0xC0 && m <= 0xCF && m != 0xC4 && m != 0xC8 && m != 0xCC)
         {
@@ -227,7 +237,8 @@ inline ImageProbeResult ProbeJpeg(const unsigned char* d, size_t n, int* outW, i
 * IMG_UNKNOWN -> 看不懂，调用方应交给 GDI+ 裁决
 */
 inline ImageProbeResult ProbeImageHeader(const unsigned char* d, size_t n,
-                                         int* outW, int* outH)
+                                         int* outW, int* outH,
+                                         bool headOnly = false)
 {
     if (outW) *outW = 0;
     if (outH) *outH = 0;
@@ -236,11 +247,11 @@ inline ImageProbeResult ProbeImageHeader(const unsigned char* d, size_t n,
 
     /* --- PNG --- */
     if (n >= 8 && memcmp(d, kPngSig, 8) == 0)
-        return ProbePng(d, n, outW, outH);
+        return ProbePng(d, n, outW, outH, headOnly);
 
     /* --- JPEG --- */
     if (d[0] == 0xFF && d[1] == 0xD8 && d[2] == 0xFF)
-        return ProbeJpeg(d, n, outW, outH);
+        return ProbeJpeg(d, n, outW, outH, headOnly);
 
     /* --- 其它常见格式：只认签名，结构交给 GDI+ --- */
     if (d[0] == 'B' && d[1] == 'M')                       /* BMP */

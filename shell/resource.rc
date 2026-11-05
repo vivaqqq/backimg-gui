@@ -1,4 +1,4 @@
-// backimg 图形板 v1.3.28 (C 语言版) 资源定义
+// backimg 图形板 v1.3.29 (C 语言版) 资源定义
 // 内嵌 ExplorerBgTool.dll、默认 config.ini、app.ico
 // 版本号与 main.c 中 GUI_VERSION 保持一致，每次修改同步递增
 // 素材文件放在上级目录（各版本目录共用同一份，避免重复拷贝）
@@ -19,8 +19,8 @@ IDR_INI     RCDATA  "config.ini"
 IDI_APPICON ICON    "app.ico"
 
 IDR_VERSION VERSIONINFO
-FILEVERSION     1,3,28,0
-PRODUCTVERSION  1,3,28,0
+FILEVERSION     1,3,29,0
+PRODUCTVERSION  1,3,29,0
 FILEOS          VOS_NT_WINDOWS32
 FILETYPE        VFT_APP
 BEGIN
@@ -29,12 +29,12 @@ BEGIN
         BLOCK "080404B0"
         BEGIN
             VALUE "FileDescription",  "backimg 图形板 - ExplorerBgTool 配置面板"
-            VALUE "FileVersion",      "1.3.28.0"
+            VALUE "FileVersion",      "1.3.29.0"
             VALUE "InternalName",     "backimg_GUI"
             VALUE "LegalCopyright",   "ExplorerBgTool.dll 版权归 Maplespe 所有；图形面板部分由 WorkBuddy 在豆包审稿协助下编写。"
-            VALUE "OriginalFilename", "backimg图形板_v1.3.28.exe"
+            VALUE "OriginalFilename", "backimg图形板_v1.3.29.exe"
             VALUE "ProductName",      "backimg 图形板"
-            VALUE "ProductVersion",   "1.3.28 (配套 DLL v1.3.28 秒级轮换+目录自愈版)"
+            VALUE "ProductVersion",   "1.3.29 (配套 DLL v1.3.29 后台预热+轻量扫描版)"
         END
     END
     BLOCK "VarFileInfo"

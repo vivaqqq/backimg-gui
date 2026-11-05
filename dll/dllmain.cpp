@@ -84,7 +84,7 @@
 *     新配置键 randomVal（秒）+ randomUnit（面板显示单位，DLL 不换算），
 *     旧键 randomMin（分钟）×60 兼容读取；上限 86400 秒（一天）；
 *   D2 自定义图片目录"偶发不显示"修复（用户实机：folder 指到
-*     G://MyPics 偶发全无背景）：
+*     G:\手机备份\Image 偶发全无背景）：
 *     N1 folder 路径规整（首尾空白/引号/尾反斜杠）；
 *     N2 目录存在但枚举拿不到句柄（盘未就绪/杀软瞬时锁）→ 原地重试
 *        3×200ms 再枚举；真·空目录走不到重试，不拖慢开窗；
@@ -107,6 +107,27 @@
 *   （P1 load_config 重置自定义态标志（「恢复配置」路径）/ P2 hRotLabel
 *   死变量清除 / P3 已在自定义态重选「自定义…」不重置用户已填值），
 *   见外壳总卷 v1.3.28 节。配置键/协议与 v1.3.27 完全一致。
+* ------------------------------------------------------------------
+* v1.3.29(首次打开卡顿根治：后台预热 + 轻量扫描 + 按需解码，配套 GUI v1.3.29)：
+*   用户实机（148 张大图、每 10 秒轮换）：首次打开资源管理器窗口卡 1~2 秒。
+*   根因：BHO 构造链在界面线程同步"全量读入 + FNV 哈希 + 头探测"
+*   （148 × 10~16MB ≈ 1.85GB I/O + 1.85GB 哈希 + 1.85GB 常驻内存），
+*   开机竞态下 BHO#2 重复扫描；首帧再叠加单张解码缩放。
+*   首稿（已作废）用"后台线程 + 并行探测"把活搬走——工作量一点没少。
+*   经 Deepseek V4.1 Flash 三层建议 + WorkBuddy 复核修订，改为釜底抽薪：
+*   L1 扫描期只读文件头（≤256KB；headOnly 模式：JPEG 跳过 EOI 尾检、
+*      PNG 校验完 IHDR 即判 OK，截断文件由绘制期解码兜底）——
+*      扫描 I/O 从 ~1.85GB 降到 ~38MB；
+*   L2 缓存键轻量化：全量内容哈希 → 头部哈希 ^ (文件大小 × FNV 素数)；
+*   L3 解码按需：删除常驻 m_raw，绘制期 Bitmap::FromFile 读盘解码，
+*      explorer 常驻内存 −1.85GB；同名文件换内容下次轮换即生效（旧行为需重启）；
+*   D1 后台预热线程保留（BELOW_NORMAL + 200ms 让路 DllMain），LoadSettings
+*      图像段 try_lock（窗口线程永不被扫描卡住）；
+*   D3 列表就绪整体重绘保留（开机早期窗口背景浮现、增删图立即生效）；
+*   首稿的 D2 并行探测作废（38MB 串行 30ms，无需线程）；
+*   新增判死机制：文件级解码失败标记 m_dead，抽签与绘制跳过（坏图不反复抽中）。
+*   红线：配置键/协议/定时器/绘制质量/COM 导出表与 v1.3.28 一致；
+*   随机列表顺序不变；语义变化仅两条且均为改善（见变更清单 R2 节）。
 * ------------------------------------------------------------------
 */
 //v1.3.15: windows.h 必须先于 gdiplus.h（PROPID 等类型依赖），MinGW 编译必需
@@ -303,7 +324,16 @@ void CALLBACK RotateTimerProc(HWND hWnd, UINT msg, UINT_PTR idEvent, DWORD dwTim
 
         /* 4) 重抽签（v1.3.20(A)：高质量随机源）并写回登记表
          *    v1.3.21(D5)：RandomIndex 有 size_t 重载，n 免强转免溢出 */
+        /* v1.3.29(R2)：抽签避开已判死的图片（最多重试 4 次；全死则按原值，
+         * 该窗口本周期无背景，下轮轮换自然再试） */
         int idx = RandomIndex(n);
+        {
+            std::lock_guard<std::mutex> lk(g_listMx);
+            for (int tries = 0; tries < 4 && idx >= 0
+                 && (size_t)idx < m_config.imageList.size()
+                 && m_config.imageList[idx]->IsDead(); ++tries)
+                idx = RandomIndex(n);
+        }
         {
             std::lock_guard<std::mutex> lk(g_wndDataMx);
             auto it = g_wndData.find(hWnd);
@@ -346,8 +376,9 @@ static void ApplyRotateTimerAll()
 
 #pragma endregion
 
-extern bool InjectionEntryPoint();      //注入入口点
+extern bool InjectionEntryPoint(bool isExplorer); //注入入口点（R3/S4：预热线程仅 explorer）
 extern void LoadSettings(bool loadimg); //加载dll设置
+static DWORD WINAPI PreheatProc(LPVOID lpParam); /* v1.3.29(D1)：后台预热线程（定义于 InitBackground 之后） */
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -373,15 +404,19 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         wchar_t pName[MAX_PATH] = { 0 };
         DWORD nLen = GetModuleFileNameW(NULL, pName, MAX_PATH);
         bool allow = false;
+        bool isExplorer = false;
         if (nLen > 0 && nLen < MAX_PATH) {
             const wchar_t* name = wcsrchr(pName, L'\\');
             name = name ? name + 1 : pName;
-            allow = (_wcsicmp(name, L"explorer.exe") == 0
-                  || _wcsicmp(name, L"regsvr32.exe") == 0);
+            isExplorer = (_wcsicmp(name, L"explorer.exe") == 0);
+            allow = (isExplorer || _wcsicmp(name, L"regsvr32.exe") == 0);
         }
         if (!allow)
             return FALSE;       /* 非目标进程：拒绝驻留，系统随即卸载本 DLL */
-        InjectionEntryPoint();  /* explorer 里真正初始化；regsvr32 只是借道注册 */
+        /* v1.3.29(R3/S4)：只有 explorer 才初始化/起预热线程 —— regsvr32
+         * 注册完即 FreeLibrary，线程存活跨卸载 = 执行已卸载的代码
+         * （旧时序靠 Sleep(200) 侥幸避开，不该赌）。 */
+        InjectionEntryPoint(isExplorer);
     }
     else if (ul_reason_for_call == DLL_PROCESS_DETACH)
     {
@@ -406,13 +441,24 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     return TRUE;
 }
 
-bool InjectionEntryPoint()
+bool InjectionEntryPoint(bool isExplorer)
 {
     /* v1.3.20(A)：原 srand((int)time(0)) 拆除。
      * 随机源已整体换成 WinAPI.cpp 的 RandomIndex（mt19937，random_device
      * + 系统计数混种，进程内只初始化一次，与这里的调用时机无关）。
      * 旧写法的毛病：种子只精确到秒 —— explorer 秒级重启会拿到同一个
      * 种子，整条"随机"序列逐字复现，这正是"感觉不随机"的来源之一。 */
+
+    /* v1.3.29(D1)：后台预热 —— explorer 加载本 DLL 的瞬间即启动预热线程，
+     * 把"枚举目录 + 头部读入 + 指纹"整体挪出界面线程。
+     * 只创建不等待，句柄即关（线程自活到进程退出；本 DLL 不卸载）。
+     * v1.3.29(R3/S4)：仅 explorer 启动 —— regsvr32 注册完即 FreeLibrary，
+     * 线程存活跨卸载就是执行已卸载的代码（旧时序靠 Sleep(200) 侥幸）。 */
+    if (isExplorer)
+    {
+        HANDLE hPreheat = CreateThread(NULL, 0, PreheatProc, NULL, 0, NULL);
+        if (hPreheat) CloseHandle(hPreheat);
+    }
     return true;
 }
 
@@ -487,7 +533,7 @@ static void AppendLoadLog(const std::wstring& body)
 /* ------------------------------------------------------------------
 * v1.3.25(D2) 自定义图片目录"偶发不显示"修复
 *
-* 用户实机报告：custom=true 且 folder 指向程序目录之外（如 G://MyPics）
+* 用户实机报告：custom=true 且 folder 指向程序目录之外（如 G:\手机备份\Image）
 * 时，偶然整个背景不显示；改回插件目录 Image 再改回来又好了。
 *
 * 成因分析（按代码路径逐条核对）：
@@ -585,8 +631,10 @@ void LoadSettings(bool loadimg)
 {
     /* v1.3.15 修订(审计 4.3)：多个窗口线程可能同时进入，重建过程串行化，
      * 避免"两个线程同时 delete+重建 imageList"的二次释放。*/
+    /* v1.3.29(D1)：锁语义拆分 —— 旧版入口独占整把锁，开机预热线程扫描的
+     * 几秒里窗口线程会在入口阻塞。现拆两段：标量段全原子无锁并发安全
+     * （v1.3.19 P2-2 已原子化）；图像段 try_lock（见 loadimg 分支）。 */
     static std::mutex s_loadMx;
-    std::lock_guard<std::mutex> lk(s_loadMx);
 
     //加载配置 Load config
     std::wstring dllDir = GetCurDllDir();
@@ -639,6 +687,13 @@ void LoadSettings(bool loadimg)
     //加载图像 Load Image
     if (!loadimg) return;
 
+    /* v1.3.29(D1)：图像段串行锁改 try_lock —— 拿不到 = 预热线程正在扫描，
+     * 本窗口零等待返回（按现有列表绘制；列表就绪后由 D3 补整体重绘）。
+     * 重建互斥本身保留：同一时刻至多一个线程在做重建。 */
+    std::unique_lock<std::mutex> lk(s_loadMx, std::try_to_lock);
+    if (!lk.owns_lock())
+        return;
+
     /* v1.3.18：图片目录按以下优先级解析
     * 1) config.ini 里 custom=true 且 folder 指向的目录真实存在
     *    —— 面板的「自定义图片目录」从这一版起才真正生效（老版本 DLL 根本不读这两个键）
@@ -650,7 +705,7 @@ void LoadSettings(bool loadimg)
 
     const bool custom = (GetIniString(cfgPath, L"image", L"custom") == L"true");
     /* v1.3.25(D2) N1：folder 先做路径规整（去首尾空白/引号/多余尾反斜杠），
-     * 手改 ini 写成 "G://MyPics\" 这类尾巴也不再造成判断歧义 */
+     * 手改 ini 写成 "G:\手机备份\Image\" 这类尾巴也不再造成判断歧义 */
     std::wstring folder = NormalizeDirPath(GetIniString(cfgPath, L"image", L"folder"));
 
     if (custom && IsDirExisting(folder)) {
@@ -734,7 +789,37 @@ void LoadSettings(bool loadimg)
      * 可能拿到刚被 delete 的指针（use-after-free）。现在只有文件集合真的
      * 变化时才重建；posType/alpha 等标量配置在上面已照常更新。
      * 注：替换同名文件的内容需重启 explorer 才生效（与上游行为一致）。*/
-    static std::vector<std::wstring> s_lastFiles;
+    /* v1.3.29(R3/S2)：文件集合比较升级为"路径 + 大小 + 修改时间"——
+     * 同名换图（同步盘常见）也能触发重建，修复"同名换不同尺寸图被
+     * 拉伸变形直到重启 explorer"（DrawImage 以旧 Size 为源矩形）。
+     * 属性读取失败的文件按 {0,0} 记名（下轮自愈）。 */
+    struct FileSig
+    {
+        std::wstring path;
+        unsigned long long size = 0;
+        long long mtime = 0;
+        bool operator==(const FileSig& o) const
+        { return path == o.path && size == o.size && mtime == o.mtime; }
+    };
+    static std::vector<FileSig> s_lastSigs;
+    std::vector<FileSig> fileSigs;
+    fileSigs.reserve(fileList.size());
+    for (size_t fi = 0; fi < fileList.size(); ++fi)
+    {
+        FileSig sig;
+        sig.path = fileList[fi];
+        WIN32_FILE_ATTRIBUTE_DATA fa;
+        if (GetFileAttributesExW(fileList[fi].c_str(), GetFileExInfoStandard, &fa))
+        {
+            ULARGE_INTEGER sz;
+            sz.HighPart = fa.nFileSizeHigh;
+            sz.LowPart = fa.nFileSizeLow;
+            sig.size = sz.QuadPart;
+            sig.mtime = ((long long)fa.ftLastWriteTime.dwHighDateTime << 32)
+                      | (long long)fa.ftLastWriteTime.dwLowDateTime;
+        }
+        fileSigs.push_back(sig);
+    }
     /* v1.3.19(审计修复 P2-6B)：当前列表是否已是"全量图集"。
      * 非随机模式只装 1 张图；用户切到随机后若文件集合没变，
      * 旧早退条件会带着这张单图继续用 —— 随机功能实际失效。
@@ -744,14 +829,14 @@ void LoadSettings(bool loadimg)
         /* v1.3.15 R3：读列表结构须握 g_listMx（绘制线程可能同时在取凭证）
          * v1.3.15 R4(复审 P3)：s_lastFiles 的写入也挪进锁内，读写口径一致 */
         std::lock_guard<std::mutex> lk(g_listMx);
-        if (!m_config.imageList.empty() && fileList == s_lastFiles
+        if (!m_config.imageList.empty() && fileSigs == s_lastSigs
             && (m_config.isRandom.load() || s_listIsFullSet))
         {
             /* v1.3.25(D2)：图片集合没变 = 目录已正常工作，撤掉自愈重试标记 */
             s_retryWanted.store(false);
             return;             /* 图片集合没变：继续用现有位图，零开销 */
         }
-        s_lastFiles = fileList;
+        s_lastSigs = fileSigs;
     }
 
     if (fileList.empty())
@@ -774,6 +859,11 @@ void LoadSettings(bool loadimg)
      * 绘制线程手里的旧凭证不受换表影响，对象按引用计数自动释放——
      * use-after-free 从机制上消除。*/
     std::vector<std::shared_ptr<BitmapGDI>> fresh;
+
+    /* v1.3.29(R2/L1)：头探测已轻量化（每文件只读 ≤256KB 头部），串行即可；
+     * 首稿的并行探测方案随全量读入一并作废（扫描从 GB 级降到 38MB 级，
+     * 无需线程）。耗时仍入日志供实机验证。 */
+    ULONGLONG tProbe0 = GetTickCount64();
     for (size_t i = 0; i < fileList.size(); i++)
     {
         auto bmp = std::make_shared<BitmapGDI>(fileList[i]);
@@ -798,11 +888,28 @@ void LoadSettings(bool loadimg)
         * 改为"成功收进第一张有效图后"才 break。 */
         if (!m_config.isRandom.load() && !fresh.empty()) break;
     }
+    ULONGLONG probeMs = GetTickCount64() - tProbe0;
     {
         std::lock_guard<std::mutex> lk(g_listMx);
         m_config.imageList.swap(fresh);   /* 旧列表随 fresh 析构释放，持凭证者不受影响 */
     }
     s_listIsFullSet = m_config.isRandom.load();   /* v1.3.19(P2-6B)：随机=全量，非随机=单图 */
+
+    /* v1.3.29(D3)：列表重建完成 → 全体已登记窗口立即重绘。
+     * 先例：LoadRetryTimerProc 自愈成功后的整体重绘。覆盖两个场景：
+     * a) 开机早期打开的窗口在预热完成时立刻浮现背景（当时列表为空）；
+     * b) 增删图片后，其它窗口不再等各自轮换定时器才用上新列表。
+     * InvalidateRect 跨线程合法（仅投递重绘消息），与属主线程无关。 */
+    {
+        std::vector<HWND> hs;
+        {
+            std::lock_guard<std::mutex> lk(g_wndDataMx);
+            hs.reserve(g_wndData.size());
+            for (auto& kv : g_wndData) hs.push_back(kv.first);
+        }
+        for (HWND h : hs)
+            InvalidateRect(h, 0, TRUE);
+    }
 
     /* v1.3.25(D2)：加载成功的收尾 —— 撤自愈标记；但若一张都没解码成功
      * （文件恰好全部瞬时不可读等），按失败处理挂自愈重试 */
@@ -844,6 +951,15 @@ void LoadSettings(bool loadimg)
                 L"       来源 : %ls\r\n"
                 L"       目录 : %ls",
                 (int)m_config.imageList.size(), srcDesc.c_str(), imgPath.c_str());
+        AppendLoadLog(line);
+    }
+
+    /* v1.3.29(R2)：探测耗时入日志 —— 实机验证与审计的数据来源 */
+    {
+        wchar_t line[256];
+        swprintf(line, 256,
+            L"探测 : %d 个文件头，耗时 %lu ms（串行·头部≤256KB）\r\n",
+            (int)fileList.size(), (unsigned long)probeMs);
         AppendLoadLog(line);
     }
 }
@@ -890,7 +1006,7 @@ static void WriteInitLog(const std::wstring& body)
     GetLocalTime(&st);
     wchar_t head[256];
     swprintf(head, 256,
-        L"ExplorerBgTool v1.3.28 (backimg 秒级轮换+目录自愈版)  initialization log\r\n"
+        L"ExplorerBgTool v1.3.29 (backimg 后台预热+轻量扫描版)  initialization log\r\n"
         L"%04d-%02d-%02d %02d:%02d:%02d   pid=%lu  tid=%lu\r\n"
         L"dll: %ls\r\n\r\n",
         st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond,
@@ -1022,6 +1138,40 @@ static void InitBackground()
     }
 
     WriteInitLog(log);
+}
+
+/* v1.3.29(D1)：后台预热线程。
+ * 触发点：InjectionEntryPoint（DLL 加载进 explorer 的瞬间），先于任何
+ * BHO 构造 —— 把旧版压在界面线程上的扫描彻底挪走（R2 起扫描本身已
+ * 轻量化到 38MB 级，预热让慢盘/开机争抢场景也无感）。
+ * 优先级 BELOW_NORMAL；开头 Sleep(200)：让 DllMain 先返回，避免预热线程
+ * 在 loader lock 释放前触发 GDI+ 的 LoadLibrary（经典加载器死锁边缘）。
+ * 全程 try/catch：预热是锦上添花，任何异常都不允许影响 explorer。 */
+static DWORD WINAPI PreheatProc(LPVOID)
+{
+    Sleep(200);
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+    try
+    {
+        if (!s_initDone.load(std::memory_order_acquire))
+        {
+            std::call_once(s_initOnce, InitBackground);
+            s_initDone.store(true, std::memory_order_release);
+        }
+        if (BitmapGDI::GdiplusUsable())
+        {
+            AppendLoadLog(L"预热(D1) : 后台预热线程启动 —— 提前构建图片列表\r\n");
+            ULONGLONG t0 = GetTickCount64();
+            LoadSettings(true);
+            wchar_t line[160];
+            swprintf(line, 160,
+                L"预热(D1) : 预热完成，总耗时 %lu ms —— 首个窗口免扫描\r\n",
+                (unsigned long)(GetTickCount64() - t0));
+            AppendLoadLog(line);
+        }
+    }
+    catch (...) { /* 任何异常就地吞掉，绝不穿透回 explorer */ }
+    return 0;
 }
 
 void OnWindowLoad()
@@ -1361,6 +1511,9 @@ int MyFillRect(HDC hDC, const RECT* lprc, HBRUSH hbr)
                     recIdx = 0;
                 }
                 pBgBmp = m_config.imageList[recIdx];
+                /* v1.3.29(R2)：已判死的图片本帧跳过（不画背景；抽签已避开死位） */
+                if (pBgBmp->IsDead())
+                    pBgBmp.reset();
             }
             /* v1.3.20(B)：钳位结果写回登记表，后续帧不必反复钳 */
             {

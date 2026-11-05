@@ -1,8 +1,8 @@
 @echo off
-rem Build backimg GUI v1.3.16 (pure C + Win32)
+rem Build backimg GUI v1.3.29 (pure C + Win32)
 rem Requires: MinGW-w64 (gcc + windres) in PATH
 setlocal
-set VER=1.3.28
+set VER=1.3.29
 cd /d "%~dp0"
 windres -O coff resource.rc -o resource.res || goto :err
 gcc -O2 -mwindows -municode -std=c11 -Wall main.c resource.res -o "backimg图形板_v%VER%.exe" -lgdiplus -lcomctl32 -luxtheme -ldwmapi -lshlwapi -lole32 || goto :err

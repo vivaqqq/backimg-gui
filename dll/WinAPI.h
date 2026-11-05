@@ -13,7 +13,12 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <atomic>    /* v1.3.29(R2/R3)：判死标记 */
 #include <climits>   /* v1.3.22：INT_MAX（RandomIndex size_t 重载的钳位上界） */
+
+/* v1.3.29(R3)：耗时测量（MinGW 头按 _WIN32_WINNT 门控其声明，这里手工
+ * 补声明；kernel32 自 Vista 起导出。dllmain.cpp 的同一声明已并入此处）。 */
+extern "C" ULONGLONG WINAPI GetTickCount64(void);
 
 /*调试输出
 * Debug output
@@ -174,12 +179,14 @@ public:
     /* 取本线程为该【内容】解码的源位图；没有则解码一份。
      *
      * 【调用方必须已持有 GDI+ 串行锁】（本 DLL 里由 GetScaled 统一加锁）。
-     * hash : 文件内容的哈希，由 BitmapGDI 构造时算好
+     * hash : 文件指纹（v1.3.29(R2/L2)：头部哈希 ^ 文件大小）
      * w/h  : 源图尺寸
-     * raw  : 文件原始字节
+     * path : 图片文件路径（v1.3.29(R2/L3)：解码按需读文件，raw 已废除）
+     * decodeFailed : 出参，true = 文件级解码失败（打不开/格式拒认），
+     *                调用方应判死该图；其余失败（分配/DrawImage）不改写
      */
     Gdiplus::Bitmap* GetSourceLocked(unsigned long long hash, int w, int h,
-                                    const std::vector<BYTE>& raw);
+                                    const std::wstring& path, bool* decodeFailed = NULL);
 
 private:
     struct Entry
@@ -256,16 +263,40 @@ private:
 	/* v1.3.18：m_ownerId 已删除 —— 缩放缓存全面改按内容哈希（m_hash）寻址，
 	 * 不再需要"归属 id"这个概念。 */
 
-	/* 原始文件字节：各线程自行解码，避免跨线程共享 GDI+ 对象 */
-	std::vector<BYTE> m_raw;
+	/* v1.3.29(R2/L3)：图片路径 —— 解码改按需读文件，原始字节不再常驻
+	 * （旧 m_raw 成员让上百张大图全量驻留 explorer 内存，GB 级浪费）。 */
+	std::wstring m_path;
 
-	/* v1.3.17：文件内容哈希（FNV-1a 64）。
-	 * 源位图缓存按它做键 —— 同一份内容重建图片列表时直接命中缓存，
-	 * 不会重复解码、也不会重复占内存（这是修掉无上限泄漏的关键）。 */
+	/* v1.3.17→v1.3.29(R2/L2)：缓存键从"全量内容 FNV"改为
+	 * "头部字节哈希 ^ (文件大小 × FNV 素数)"—— 同文件重建列表键不变
+	 * （缓存照常命中），内容被替换时头部或大小几乎必然变化（键自然失效），
+	 * 哈希成本从 GB 级降到 256KB 级。 */
 	unsigned long long m_hash = 0;
 
 	/* v1.3.17：图片是否确证有效 */
 	bool m_valid = false;
+
+	/* v1.3.29(R3/S3)：判死标记带 5 分钟 TTL —— 文件级解码失败时记下
+	 * 时刻，TTL 内抽签与绘制跳过本图（坏图不反复抽中）；到期自动
+	 * 复活重试一次，瞬时故障（同步盘写入/杀软独占）只短暂缺席。
+	 * 注意：截断类损坏不靠本机制拦截（GDI+ 对截断图返回 Ok），
+	 * 那条防线在扫描期尾部终止符检查（R3/S1，WinAPI.cpp 构造函数）。 */
+	mutable std::atomic<unsigned long long> m_deadSince{ 0 };
+
+public:
+	/* v1.3.29(R3/S3)：本图是否已判死（5 分钟 TTL 到期自动复活） */
+	bool IsDead() const
+	{
+		unsigned long long t = m_deadSince.load(std::memory_order_relaxed);
+		if (!t)
+			return false;
+		if (GetTickCount64() - t > 300000ULL)   /* 5 分钟 */
+		{
+			m_deadSince.store(0, std::memory_order_relaxed);
+			return false;
+		}
+		return true;
+	}
 };
 
 /* ------------------------------------------------------------------

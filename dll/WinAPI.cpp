@@ -12,6 +12,7 @@
 #include <io.h>
 #include <shlwapi.h>
 #include <map>
+#include <set>
 #include <random>
 #pragma comment(lib, "shlwapi.lib")
 
@@ -223,60 +224,211 @@ static unsigned long long HashBytes(const BYTE* data, size_t len)
     return h;
 }
 
+/* v1.3.29(R5/R4-1)：尾部终止符验证 —— 反向搜索最后一处终止符 + 距尾阈值。
+ * 纯函数（无 I/O），可独立单测；buf 必须是文件的尾部窗口（末端=文件末尾）。
+ * 反向搜索的动机：真实相机/手机 JPEG 的 APP1(EXIF) 段内嵌完整缩略图
+ * JPEG（自带 FF D9）——前向搜索首个命中的是缩略图 EOI，带缩略图文件的
+ * 截断与否一律误判 FOUND（R4-1 实测复现）；反向搜索从尾部开始，首个命中
+ * 即主图真 EOI，天然免疫。JPEG 熵编码有字节填充，图像数据里不会出现
+ * FF D9，反向搜索同样安全。
+ * FOUND  ：最后一处终止符距尾 <= TAIL_TOL（保留 v1.3.19"容忍尾部少量
+ *          追加"语义）；
+ * ABSENT ：尾部窗口内无终止符，或最后一处距尾超阈 → 确证截断
+ *          （距尾 TAIL_TOL 内无终止符 ⇒ "最后一处终止符"距尾 > TAIL_TOL
+ *          或不存在，两种情况同判 ABSENT，无需找全文件）；
+ * UNKNOWN：窗口异常小，证据不足（调用方放行，绘制期解码 + S3 TTL 兜底）。 */
+enum TailVerdict { TV_FOUND, TV_ABSENT, TV_UNKNOWN };
+
+#define TAIL_TOL 4096              /* 距尾容忍：尾部追加 <= 4KB 视为合法 */
+#define TAIL_WIN (TAIL_TOL + 32)   /* 读尾窗口：阈值 + 终止符长度 + 余量 */
+
+static TailVerdict VerifyTailOnBuf(const BYTE* buf, size_t bufLen, bool isJpeg)
+{
+	const size_t termLen = isJpeg ? 2 : 8;
+	if (bufLen < termLen)
+		return TV_UNKNOWN;
+	long long last = -1;
+	if (isJpeg)
+	{
+		for (long long i = (long long)bufLen - 2; i >= 0; --i)
+			if (buf[i] == 0xFF && buf[i + 1] == 0xD9) { last = i; break; }
+	}
+	else
+	{
+		/* PNG IEND 块：length(4B=0) + "IEND"；其后还有 4B CRC 在距尾判定之外 */
+		for (long long i = (long long)bufLen - 8; i >= 0; --i)
+			if (buf[i] == 0 && buf[i + 1] == 0 && buf[i + 2] == 0 && buf[i + 3] == 0
+				&& buf[i + 4] == 'I' && buf[i + 5] == 'E'
+				&& buf[i + 6] == 'N' && buf[i + 7] == 'D') { last = i; break; }
+	}
+	if (last < 0)
+		return TV_ABSENT;
+	const long long tail = (long long)bufLen - (last + (long long)termLen);
+	return tail <= TAIL_TOL ? TV_FOUND : TV_ABSENT;
+}
+
+/* v1.3.29(R6/B)：EOI 之后是否紧跟已知容器签名（Motion Photo / 追加载荷）。
+ * 在 p 起 16 字节窗口内找：MP4(ftyp)/ZIP(PK)/RIFF/Samsung(SEF)/次级
+ * JPEG(FF D8 FF)/PNG 签名——熵数据在 16 字节窗口内命中 4 字节签名的
+ * 概率 ~2^-30，可忽略，不会把截断图误判成载荷。 */
+static bool LooksLikePayload(const BYTE* p, size_t avail)
+{
+	const size_t W = avail < 16 ? avail : 16;
+	if (W < 4) return false;
+	for (size_t k = 0; k + 4 <= W; ++k)
+	{
+		if (memcmp(p + k, "ftyp", 4) == 0) return true;          /* MP4 box */
+		if (memcmp(p + k, "PK\x03\x04", 4) == 0) return true;   /* ZIP */
+		if (memcmp(p + k, "RIFF", 4) == 0) return true;
+		if (memcmp(p + k, "SEFH", 4) == 0) return true;          /* Samsung */
+		if (memcmp(p + k, "\x89PNG", 4) == 0) return true;
+	}
+	if (W >= 3)
+		for (size_t k = 0; k + 3 <= W; ++k)
+			if (p[k] == 0xFF && p[k + 1] == 0xD8 && p[k + 2] == 0xFF) return true;
+	return false;
+}
+
+/* v1.3.29(R6/B)：载荷救回 —— JPEG 判 ABSENT 后的二次判定（R5-1）。
+ * "尾部无终止符"≠"文件坏了"：Motion Photo（主图 EOI 后挂 MP4，手机
+ * 相册常见）、导出工具追加的元数据等合法文件都会落进 ABSENT，而它们
+ * 的主图完整、GDI+ 能正常解码。判据：全文件反向找最后一处 FF D9——
+ * 其后紧跟容器签名 → 主图完整的载荷文件，放行（截断文件的最后终止符
+ * 是缩略图 EOI，其后是主图熵数据，非签名 → 维持剔除；MP4 内部散落的
+ * FF D9 非签名，反向扫描自然跳过）；读失败 → UNKNOWN（放行）。 */
+static TailVerdict RescuePayloadJPEG(FILE* fp, long long total,
+                                     const BYTE* head, size_t headLen)
+{
+	if (headLen >= (size_t)total)
+	{
+		/* 小文件：整份在缓冲，零 I/O */
+		for (long long i = (long long)headLen - 2; i >= 0; --i)
+			if (head[i] == 0xFF && head[i + 1] == 0xD9
+				&& LooksLikePayload(head + i + 2, headLen - (size_t)i - 2))
+				return TV_FOUND;
+		return TV_ABSENT;
+	}
+	/* 大文件：从尾按 1MB 块反向读，块间重叠 3 字节防 FF D9 跨界。
+	 * 只对"尾 4KB 无终止符"的文件走到这里（正常图片第 1 步即结束）。 */
+	const long long CHUNK = 1024 * 1024;
+	long long end = total;
+	std::vector<BYTE> buf;
+	while (end > 0)
+	{
+		long long start = end - CHUNK > 0 ? end - CHUNK : 0;
+		size_t len = (size_t)(end - start);
+		buf.resize(len);
+		if (_fseeki64(fp, start, SEEK_SET) != 0
+			|| fread(&buf[0], 1, len, fp) != len)
+			return TV_UNKNOWN;
+		for (long long i = (long long)len - 2; i >= 0; --i)
+		{
+			if (buf[i] != 0xFF || buf[i + 1] != 0xD9)
+				continue;
+			/* 候选命中但后文不足 16 字节（EOI 恰落在块尾附近，签名窗口
+			 * 被块边界切断——R6 实测 motion.jpg 因此漏判）：用句柄从文件
+			 * 补读 16 字节再判。距尾 >4KB 的 EOI 后文必然完整在文件内。 */
+			const BYTE* q = &buf[i + 2];
+			size_t avail = len - (size_t)i - 2;
+			BYTE extra[16];
+			if (avail < 16)
+			{
+				if (_fseeki64(fp, start + i + 2, SEEK_SET) != 0)
+					continue;
+				DWORD got = (DWORD)fread(extra, 1, 16, fp);
+				q = extra;
+				avail = (size_t)got;
+			}
+			if (LooksLikePayload(q, avail))
+				return TV_FOUND;
+		}
+		if (start == 0) break;
+		end = start + 3;
+	}
+	return TV_ABSENT;
+}
+
+/* v1.3.29(R6/A)：扫描剔除登记 —— "某张图为什么没出现"要有据可查
+ * （R5-1：静默吞图无日志）。进程内同一文件只记一次，防重建灌日志；
+ * 目录不可写静默放弃，绝不影响 explorer。 */
+static void LogRejectedFile(const std::wstring& path, const wchar_t* reason)
+{
+	static std::mutex s_mx;
+	static std::set<std::wstring> s_seen;
+	{
+		std::lock_guard<std::mutex> lk(s_mx);
+		if (!s_seen.insert(path).second)
+			return;
+	}
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+	std::wstring name = path.substr(path.find_last_of(L"\\/") + 1);
+	wchar_t line[560];
+	swprintf(line, 560, L"[%02d:%02d:%02d] %ls  (%ls)\r\n",
+	         st.wHour, st.wMinute, st.wSecond, name.c_str(), reason);
+	std::wstring text = L"[扫描剔除] " + std::wstring(line);
+	int need = WideCharToMultiByte(CP_UTF8, 0, text.c_str(), (int)text.size(),
+	                               NULL, 0, NULL, NULL);
+	if (need <= 0) return;
+	std::string utf8((size_t)need, '\0');
+	WideCharToMultiByte(CP_UTF8, 0, text.c_str(), (int)text.size(),
+	                    &utf8[0], need, NULL, NULL);
+	HANDLE h = CreateFileW((GetCurDllDir() + L"\\ExplorerBgTool_init.log").c_str(),
+	                       FILE_APPEND_DATA, FILE_SHARE_READ, NULL,
+	                       OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (h == INVALID_HANDLE_VALUE) return;
+	DWORD wr = 0;
+	WriteFile(h, utf8.data(), (DWORD)utf8.size(), &wr, NULL);
+	CloseHandle(h);
+}
+
 
 
 
 BitmapGDI::BitmapGDI(std::wstring path)
 {
 	//这样加载是为了防止文件被占用
+	//v1.3.29(R2/L1)：扫描期只读文件头（≤256KB），不再全量读入——
+	//建列表只需要"宽高 + 确证未损坏"，完整解码挪到绘制期按需进行（L3）。
+	//旧版把整个文件读进 m_raw 常驻，148 张大图 = GB 级 I/O 与内存。
+	const long HEAD_MAX = 256L * 1024;
 	FILE* file = nullptr;
 	_wfopen_s(&file, path.c_str(), L"rb");
 	if (!file)
 		return;                       /* 打不开：Size 保持 {0,0}，m_valid 保持 false */
 
 	fseek(file, 0L, SEEK_END);
-	long len = ftell(file);
+	long long total = _ftelli64(file);
 	rewind(file);
-	if (len <= 0)                    /* 空文件 / ftell 失败 */
+	if (total <= 0 || total > 256LL * 1024 * 1024)   /* 沿用旧 256MB 单文件上限 */
 	{
 		fclose(file);
 		return;
 	}
 
-	/* v1.3.19(审计修复 P1-4)：单文件原始字节上限。
-	 * 原写法按 ftell 结果直接 resize，一个 1.9GB 的文件就会真读 1.9GB 进内存，
-	 * 而且 vector::resize 失败抛出的 std::bad_alloc 会一路穿透到 explorer 的
-	 * COM 边界。256MB 远超任何合理壁纸的体积，超限直接按"无效文件"处理。 */
-	const long RAW_FILE_MAX = 256L * 1024 * 1024;
-	if (len > RAW_FILE_MAX)
+	/* v1.3.29(R2/L2)：轻量指纹 = 头部字节哈希 ^ (文件大小 × FNV 素数)。
+	 * 取代旧"全量内容 FNV"作缓存键 —— 同文件重建列表键不变（缓存照常
+	 * 命中），内容被替换时头部或大小几乎必然变化（键自然失效）。 */
+	size_t headLen = (size_t)(total < (long long)HEAD_MAX ? total : (long long)HEAD_MAX);
+	std::vector<BYTE> head(headLen);
+	size_t rd = fread(&head[0], 1, headLen, file);
+	/* v1.3.29(R4/R3-3)：句柄暂不关——大文件的尾部终止符检查复用同一
+	 * 句柄（省一次 open 往返，网络盘收益明显），函数尾统一 fclose。 */
+	if (rd != headLen)                /* 读不满：文件可能正被改写 */
 	{
 		fclose(file);
 		return;
 	}
 
-	m_raw.resize((size_t)len);
-	size_t rd = fread(&m_raw[0], 1, (size_t)len, file);
-	fclose(file);
-	if (rd != (size_t)len)            /* 读不满：文件可能正被改写 */
-	{
-		m_raw.clear();
-		return;
-	}
+	m_hash = HashBytes(head.data(), head.size())
+	       ^ ((unsigned long long)total * 1099511628211ULL);
 
-	/* v1.3.17：内容哈希（FNV-1a 64）。
-	 * 源位图缓存按它做键 —— 同一份内容重建图片列表时直接命中缓存，
-	 * 不会重复解码、也不会重复占内存（修掉无上限泄漏的关键）。 */
-	m_hash = HashBytes(m_raw.data(), m_raw.size());
-
-	/* v1.3.17：先用【轻量图片头解析器】确认这是一张结构完整的图片，并取尺寸。
-	 *
-	 * 这一步同时解决两个问题：
-	 *   1) Size 的赋值只发生在"确证有效"之后 —— 不会再有未初始化的垃圾值；
-	 *   2) 结构损坏（截断 / 块长错乱 / 尺寸离谱）的文件在这里就被挡下，
-	 *      根本不会送进 GDI+ —— v1.3.16 把完整字节直接喂 GDI+，
-	 *      损坏的 PNG 会被真正解析，是新增的崩溃暴露面。 */
+	/* v1.3.29(R2/L1)：headOnly = 缓冲区不足整个文件 —— JPEG 跳过 EOI 尾检、
+	 * PNG 校验完 IHDR 即判 OK（截断文件由绘制期解码兜底，见 ImageHeader.h）。
+	 * 小于 256KB 的文件整文件在缓冲区里，保持 v1.3.28 的严格语义。 */
 	int w = 0, h = 0;
-	ImageProbeResult probe = ProbeImageHeader(m_raw.data(), m_raw.size(), &w, &h);
+	ImageProbeResult probe = ProbeImageHeader(head.data(), head.size(), &w, &h,
+	                                          headLen < (size_t)total);
 
 	if (probe == IMG_OK)
 	{
@@ -289,33 +441,79 @@ BitmapGDI::BitmapGDI(std::wstring path)
 	}
 	else if (probe == IMG_UNKNOWN && GdiplusUsable())
 	{
-		/* 看不懂的文件（其它格式 / PNG 少了 IEND 等）：【交给 GDI+ 裁决】。
-		 * 解析器不下否决结论 —— 只有能证明"确实损坏"时才拒绝，
-		 * 免得把用户的合法图片误杀（第一版解析器就犯过这个错）。
-		 * 注意这一步要持有 GDI+ 串行锁（v1.3.17 真正接上了这把锁）。 */
+		/* 看不懂的文件（其它格式 / 异形 marker 链等）：【交给 GDI+ 裁决】。
+		 * v1.3.29(R2/L1)：改用 Bitmap::FromFile —— 惰性解析，取宽高只读
+		 * 文件头，之后立刻 delete（句柄随之关闭），不再整文件进内存。 */
 		std::lock_guard<std::mutex> lk(GdiplusMutex());
-		IStream* stm = SHCreateMemStream((BYTE*)m_raw.data(), (ULONG)m_raw.size());
-		if (stm)
+		Gdiplus::Bitmap* img = Gdiplus::Bitmap::FromFile(path.c_str());
+		if (img && img->GetLastStatus() == Gdiplus::Ok)
 		{
-			Gdiplus::Bitmap* img = Gdiplus::Bitmap::FromStream(stm);
-			if (img && img->GetLastStatus() == Gdiplus::Ok)
+			LONG iw = (LONG)img->GetWidth();
+			LONG ih = (LONG)img->GetHeight();
+			if (iw > 0 && ih > 0)
 			{
-				LONG iw = (LONG)img->GetWidth();
-				LONG ih = (LONG)img->GetHeight();
-				if (iw > 0 && ih > 0)
-				{
-					Size.cx = iw;
-					Size.cy = ih;
-					m_valid = true;
-				}
+				Size.cx = iw;
+				Size.cy = ih;
+				m_valid = true;
 			}
-			if (img)
-				delete img;
-			stm->Release();
 		}
+		if (img)
+			delete img;
 	}
 	/* IMG_SUSPECT：明确是坏文件 —— Size 保持 {0,0}，m_valid 保持 false，
 	 * 上层会把它从图片列表里剔掉。绝不送进 GDI+。 */
+
+	/* v1.3.29(R5/R4-1)：尾部终止符验证（VerifyTailOnBuf 反向搜索 + 4KB 距离
+	 * 阈值；三态语义承接 R4：UNKNOWN=读失败放行交绘制期兜底）。大文件复用
+	 * 头读句柄读尾部窗口（R4/R3-3 单次开档）；小文件整份在缓冲零 I/O 直取
+	 * 尾部窗口。此前的内联判定（R3~R4 累计 ~110 行 / 6 层嵌套 / 第 4 次修改
+	 * 同一段）按审计建议抽取为纯函数——本轮 R4-1（前向搜索撞 EXIF 缩略图
+	 * EOI）正是第 5 次回同一段代码的风险兑现，抽取后构造函数只留调用。 */
+	if (m_valid && total > 12
+		&& ((head[0] == 0xFF && head[1] == 0xD8)
+			|| memcmp(&head[0], kPngSig, 8) == 0))
+	{
+		const bool isJpeg = (head[0] == 0xFF && head[1] == 0xD8);
+		TailVerdict tv;
+		if (headLen < (size_t)total)
+		{
+			/* 大文件：读尾部窗口。读失败 = 没读到 ≠ 文件坏了（R4/R3-2）。 */
+			const long long W = total > TAIL_WIN ? TAIL_WIN : total;
+			std::vector<BYTE> buf((size_t)W);
+			if (_fseeki64(file, total - W, SEEK_SET) == 0
+				&& fread(&buf[0], 1, (size_t)W, file) == (size_t)W)
+				tv = VerifyTailOnBuf(&buf[0], (size_t)W, isJpeg);
+			else
+				tv = TV_UNKNOWN;
+		}
+		else
+		{
+			/* 小文件：整份在缓冲，零 I/O 直取尾部窗口（搜索必然完成，
+			 * 结论只会是 FOUND / ABSENT）。 */
+			const size_t w = headLen > TAIL_WIN ? TAIL_WIN : headLen;
+			tv = VerifyTailOnBuf(&head[headLen - w], w, isJpeg);
+		}
+		if (tv == TV_ABSENT && isJpeg)
+		{
+			/* v1.3.29(R6/B)：载荷救回二次判定（Motion Photo 等，见函数注释）。 */
+			tv = RescuePayloadJPEG(file, total, head.data(), headLen);
+		}
+		if (tv == TV_ABSENT)
+		{
+			Size.cx = 0;
+			Size.cy = 0;
+			m_valid = false;      /* 确证截断：本轮不进列表 */
+			/* v1.3.29(R6/A)：剔除必留痕（R5-1）。 */
+			LogRejectedFile(path, isJpeg ? L"尾部无终止符且无载荷标记(疑截断)"
+			                             : L"尾部无IEND(疑截断)");
+		}
+		/* TV_UNKNOWN：证据不足，保持 m_valid 放行——绘制期解码与
+		 * S3 TTL 兜底（R4/R3-2 语义不变）。 */
+	}
+	fclose(file);                /* v1.3.29(R4/R3-3)：统一在此关档 */
+
+	/* v1.3.29(R2/L3)：记录路径，绘制期按需解码（旧 m_raw 成员已废除） */
+	m_path = path;
 }
 
 BitmapGDI::~BitmapGDI()
@@ -665,12 +863,13 @@ void ScaleCache::Clear()
  *
  * 【调用方必须已持有 GDI+ 串行锁】（由 GetScaled 统一加锁）。
  *
- * raw  : 图片的原始文件字节
+ * path : 图片文件路径（v1.3.29(R2/L3)：解码按需读文件）
+ * decodeFailed : 出参，true = 文件级解码失败（调用方应判死该图）
  * hash : 文件内容哈希
  * w/h  : 源图尺寸
  */
 Gdiplus::Bitmap* ScaleCache::GetSourceLocked(unsigned long long hash, int w, int h,
-                                             const std::vector<BYTE>& raw)
+                                             const std::wstring& path, bool* decodeFailed)
 {
     /* 已解码过？直接复用 */
     for (size_t i = 0; i < m_sources.size(); i++)
@@ -683,7 +882,7 @@ Gdiplus::Bitmap* ScaleCache::GetSourceLocked(unsigned long long hash, int w, int
         }
     }
 
-    if (raw.empty() || w <= 0 || h <= 0)
+    if (path.empty() || w <= 0 || h <= 0)
         return NULL;
 
     /* 尺寸上限：损坏文件若把尺寸写得很离谱，这里直接拒绝，
@@ -692,23 +891,19 @@ Gdiplus::Bitmap* ScaleCache::GetSourceLocked(unsigned long long hash, int w, int
     if (need > 512ULL * 1024 * 1024)   /* 单张源位图上限 512MB */
         return NULL;
 
-    /* 解码成 32bppPARGB（预乘 alpha）：
-     * GDI+ 的合成运算在预乘空间进行，统一格式后
-     * DrawImage 与 GetHBITMAP 的结果才稳定一致。 */
-    /* v1.3.19(审计修复 P1-1)：流的释放时机。
-     * GDI+ 的 Bitmap::FromStream 允许延迟解码 —— 流必须活到位图销毁为止。
-     * 旧写法 FromStream 完立刻 Release，后面 DrawImage / delete decoded
-     * 都在用"流已被释放"的位图，是明确的 API 所有权错误（探测路径
-     * WinAPI.cpp 上方反而是对的：先 delete 位图再释放流）。
-     * 现在所有分支统一按"先删位图、后释放流"收尾。 */
-    IStream* stream = SHCreateMemStream((BYTE*)raw.data(), (ULONG)raw.size());
-    if (!stream)
-        return NULL;
+    /* 解码成 32bppPARGB（预乘 alpha）：GDI+ 的合成运算在预乘空间进行，
+     * 统一格式后 DrawImage 与 GetHBITMAP 的结果才稳定一致。
+     * v1.3.29(R2/L3)：解码改按需读文件 —— Bitmap::FromFile 惰性解析，
+     * 真正解码发生在下面 DrawImage；位图 delete 后句柄即关，不长期锁文件。
+     * 旧路径 SHCreateMemStream(raw) 依赖全量常驻字节，已随 m_raw 废除。
+     * 失败语义：FromFile 失败/状态非 Ok = 文件级失败 → decodeFailed=true，
+     * 调用方（GetScaled）将本图判死；其余失败（分配/DrawImage）不判死。 */
+    if (decodeFailed) *decodeFailed = false;
 
-    Gdiplus::Bitmap* decoded = Gdiplus::Bitmap::FromStream(stream);
+    Gdiplus::Bitmap* decoded = Gdiplus::Bitmap::FromFile(path.c_str());
     if (!decoded)
     {
-        stream->Release();
+        if (decodeFailed) *decodeFailed = true;
         return NULL;
     }
 
@@ -718,7 +913,7 @@ Gdiplus::Bitmap* ScaleCache::GetSourceLocked(unsigned long long hash, int w, int
     if (decoded->GetLastStatus() != Gdiplus::Ok)
     {
         delete decoded;
-        stream->Release();
+        if (decodeFailed) *decodeFailed = true;
         return NULL;
     }
 
@@ -727,7 +922,6 @@ Gdiplus::Bitmap* ScaleCache::GetSourceLocked(unsigned long long hash, int w, int
     {
         delete pargb;
         delete decoded;
-        stream->Release();
         return NULL;
     }
     bool drawOk = true;
@@ -742,7 +936,6 @@ Gdiplus::Bitmap* ScaleCache::GetSourceLocked(unsigned long long hash, int w, int
         drawOk = (g.GetLastStatus() == Gdiplus::Ok);
     }
     delete decoded;
-    stream->Release();          /* v1.3.19：位图已销毁，现在才能释放流 */
 
     if (!drawOk)
     {
@@ -807,7 +1000,7 @@ ScaleCache::~ScaleCache()
 std::shared_ptr<ScaledBitmap> BitmapGDI::GetScaled(int dstW, int dstH)
 {
     /* v1.3.17：源位图改为每线程各自解码，这里不再依赖 pMem/pBmp */
-    if (!m_valid || Size.cx <= 0 || Size.cy <= 0 || dstW <= 0 || dstH <= 0)
+    if (IsDead() || !m_valid || Size.cx <= 0 || Size.cy <= 0 || dstW <= 0 || dstH <= 0)
         return std::shared_ptr<ScaledBitmap>();
 
     /* v1.3.19(审计修复 P1-2B)：GDI+ 启动失败后彻底停用解码路径 */
@@ -868,10 +1061,18 @@ std::shared_ptr<ScaledBitmap> BitmapGDI::GetScaled(int dstW, int dstH)
     if (hit)
         return hit;
 
+    bool decodeFailed = false;
     Gdiplus::Bitmap* srcBmp = GetThreadCache().GetSourceLocked(m_hash,
-        (int)Size.cx, (int)Size.cy, m_raw);
+        (int)Size.cx, (int)Size.cy, m_path, &decodeFailed);
     if (!srcBmp)
+    {
+        /* v1.3.29(R3/S3)：文件级解码失败 → 判死本图（带 5 分钟 TTL，
+         * 瞬时故障自动复活重试；截断类损坏不经过这里——那条防线在
+         * 扫描期尾部终止符检查 R3/S1）。 */
+        if (decodeFailed)
+            m_deadSince.store(GetTickCount64(), std::memory_order_relaxed);
         return std::shared_ptr<ScaledBitmap>();
+    }
 
     /* 1) 建一块 32bpp PARGB 的离屏位图作为缩放目标。
      *    用 PARGB（预乘）是因为 GDI+ 的合成运算在预乘空间进行，

@@ -240,8 +240,8 @@
 /* 常量与版本                                                          */
 /* ------------------------------------------------------------------ */
 #define APP_NAME_W      L"backimg图形板"
-#define GUI_VERSION     "1.3.28"
-#define DLL_VERSION     "1.3.28"
+#define GUI_VERSION     "1.3.29"
+#define DLL_VERSION     "1.3.29"
 #define CLSID_STR       "{ED15A97D-FE3E-4CDE-98FF-BC46B02896B0}"
 #define CLSID_STR_W     L"{ED15A97D-FE3E-4CDE-98FF-BC46B02896B0}"
 
