@@ -8,12 +8,12 @@
 
 ## 下载（预编译包）
 
-到 [Releases · v1.3.28](https://github.com/vivaqqq/backimg-gui/releases/tag/v1.3.28) 下载，解压即用（含图形板 exe + DLL + 配置模板 + 说明）：
+到 [Releases · v1.3.29](https://github.com/vivaqqq/backimg-gui/releases/tag/v1.3.29) 下载，解压即用（含图形板 exe + DLL + 配置模板 + 说明；v1.3.28 及更早版本在 Releases 页存档）：
 
 | 包 | 界面语言 |
 |---|---|
-| `backimg-gui_v1.3.28.zip` | 中文 |
-| `backimg-gui_v1.3.28_english-ui.zip` | English |
+| `backimg-gui_v1.3.29.zip` | 中文 |
+| `backimg-gui_v1.3.29_english-ui.zip` | English |
 
 英文界面的源码在 [`english-ui`](https://github.com/vivaqqq/backimg-gui/tree/english-ui) 分支（`shell/` 目录）。
 
@@ -35,13 +35,14 @@
 |---|------|------|
 | 1 | 图片格式扩至 7 种 | png / jpg / jpeg / bmp / gif（取首帧）/ tif / tiff，原版仅 png、jpg |
 | 2 | 运行日志 | `plugin/ExplorerBgTool_init.log`，排查问题不再靠猜 |
-| 3 | 坏文件拒收 | 伪装成图片的损坏文件不再进入随机池 |
+| 3 | 坏文件拒收 + 剔除留痕 | 截断/伪装文件进入轮换前被拦截（含内嵌缩略图场景），每次拒绝写入日志，哪张图没出现一查便知 |
 | 4 | 等比缩放 + 实时跟随 | 七档显示位置均等比不变形；拖动/最大化实时跟随；GDI+ 双三次高质量插值；缩放缓存 |
 | 5 | 定时轮换 | 真·随机源；支持秒级（如 30 秒）与分钟级间隔，每个文件夹窗口独立换图 |
 | 6 | 自定义目录自愈 | 目录不存在时轻量重试，配置恢复后自动恢复显示 |
 | 7 | 图形面板（图形板） | Win32 纯 C 外壳：注册/注销 DLL、选图、调参、恢复配置，内嵌 DLL 并做 SHA256 成对校验 |
+| 8 | 首开零卡顿 + 轻量运行（v1.3.29） | 图片库改后台线程只扫文件头（约 38MB 取代全量读入），开机首次打开文件夹不再卡顿；内存不再随图库体积常驻；动态照片（Motion Photo）正确识别；同名换图下一次轮换即生效 |
 
-完整对照见 [docs/功能对照说明.md](docs/功能对照说明.md)；逐版本修改细节见 [dll/changelog/](dll/changelog/)（v1.3.15 → v1.3.28 共 14 份变更清单与迭代总卷）。
+完整对照见 [docs/功能对照说明.md](docs/功能对照说明.md)；逐版本修改细节见 [dll/changelog/](dll/changelog/)（v1.3.15 → v1.3.29 共 15 份变更清单与迭代总卷）。
 
 ## 构建
 
@@ -52,7 +53,7 @@
 cd dll
 build.cmd <MinGW-w64的bin目录>
 
-:: 2. 构建图形面板（输出 backimg图形板_v1.3.28.exe）
+:: 2. 构建图形面板（输出 backimg图形板_v1.3.29.exe）
 cd ..\shell
 build.cmd
 ```
@@ -70,7 +71,7 @@ build.cmd
 ```
 ├── shell/              图形面板源码（纯 C + Win32）
 ├── dll/                ExplorerBgTool.dll 源码（C++，MinHook 钩子）
-│   └── changelog/      v1.3.15 → v1.3.28 逐版本变更清单 + 迭代总卷
+│   └── changelog/      v1.3.15 → v1.3.29 逐版本变更清单 + 迭代总卷
 ├── docs/               原版 vs 本版功能对照说明
 └── plugin/
     └── config.ini.example  配置文件模板（含全部配置键的中英注释）
@@ -84,7 +85,6 @@ build.cmd
 
 - 「左上/右上/左下/右下/居中」五档：图片放得下按原始像素摆放，放不下才等比缩小——小图不会被放大成糊图；需要随窗口放大请选「缩放」档
 - 「缩放」= 整图完整适配（等比，可能留白）；「缩放并填充」= 等比铺满居中裁溢出
-- 替换同名图片内容需重启 explorer 才生效（与上游一致）
 - 缓存内存上界语义：单线程 = 预算（缩放 32MB / 源图 64MB）+ 最大单条；单一超大图允许超预算驻留，最坏情况有界且已知
 
 ## 许可证
